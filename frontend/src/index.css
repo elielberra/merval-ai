@@ -1,0 +1,150 @@
+:root {
+  color-scheme: light;
+  --page: #eef4fb;
+  --surface-1: #ffffff;
+  --accent: #2a78d6;
+  --accent-soft: #dcebfb;
+  --text-primary: #12263a;
+  --text-secondary: #52627a;
+  --muted: #8a97a8;
+  --border: #d5e3f2;
+  --gain: #006300;
+  --loss: #d03b3b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--page);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+
+.dashboard {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.dashboard-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 24px;
+  color: var(--text-primary);
+}
+
+.stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.stock-card {
+  background-color: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.stock-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.stock-ticker {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stock-description {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.stock-prices {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.price-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.price-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.price-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.diff-badge {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.diff-badge.gain {
+  color: var(--gain);
+}
+
+.diff-badge.loss {
+  color: var(--loss);
+}
+
+.diff-badge.subtle {
+  background-color: color-mix(in srgb, currentColor 10%, var(--surface-1));
+}
+
+.diff-badge.moderate {
+  background-color: color-mix(in srgb, currentColor 18%, var(--surface-1));
+}
+
+.diff-badge.strong {
+  background-color: color-mix(in srgb, currentColor 28%, var(--surface-1));
+}
+
+.stock-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-outline {
+  flex: 1;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.btn-outline:hover {
+  border-color: var(--accent);
+  background-color: var(--accent-soft);
+}
