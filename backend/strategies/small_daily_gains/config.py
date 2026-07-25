@@ -23,9 +23,10 @@ SETTLEMENT = "A-24HS"
 
 LOOKBACK_DAYS = 20
 
-# --- Selection parameters ----------------------------------------------------
-# The numbers behind the research/selection step. The reasoning is documented
-# in research/technical-approach.md; keep the two in sync. (Execution parameters
+# --- Deterministic selection parameters --------------------------------------
+# The numbers the deterministic stage screens and scores with. The reasoning is
+# documented in research/financial-technical-approach.md; keep the two in sync.
+# (Execution parameters
 # — stop-loss, position size, daily loss limit — are NOT here; they belong to
 # the execution layer, which is out of scope for now.)
 
@@ -41,7 +42,7 @@ ROUND_TRIP_COST_PCT = 0.85
 MIN_PROFIT_MARGIN_PCT = 1.0
 MIN_DAILY_RANGE_PCT = ROUND_TRIP_COST_PCT + MIN_PROFIT_MARGIN_PCT
 
-# Scoring weights — the three pillars from research/technical-approach.md.
+# Scoring weights — the three pillars from research/financial-technical-approach.md.
 RANGE_WEIGHT = 0.35
 VOLUME_WEIGHT = 0.25
 SPREAD_WEIGHT = 0.20
@@ -55,7 +56,7 @@ LLM_DECISION_RUNS = 5
 
 # --- News settings -----------------------------------------------------------
 # Trusted sources per tier (see research/news-approach.md). Company news is
-# fetched only for the top NEWS_TOP_N technical candidates.
+# fetched only for the top NEWS_TOP_N deterministic candidates.
 NEWS_ENABLED = True
 NEWS_TOP_N = 5
 

@@ -75,8 +75,11 @@ export function ResearchTab() {
       ) : hasData ? (
         <>
           {data!.news && <MarketRiskGauge score={data!.news.market_risk_score} />}
-          {data!.decision && data!.technical && (
-            <TopPicks decision={data!.decision} technical={data!.technical.picks} />
+          {data!.decision && data!.deterministic && (
+            <TopPicks
+              decision={data!.decision}
+              deterministic={data!.deterministic.picks}
+            />
           )}
           {data!.news && <NewsSummary news={data!.news} />}
         </>

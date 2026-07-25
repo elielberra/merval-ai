@@ -1,8 +1,12 @@
-# Small, Consistent Daily Gains — Research Approach
+# Small, Consistent Daily Gains — Financial-Technical Approach
 
-This document tells the AI **what this strategy is trying to achieve** and **how to
-judge which stocks are the best ones to trade today**. It is about *research and
-selection only* — deciding which handful of stocks are worth trading. It says
+This document describes the **financial-technical strategy**: **what it is trying to
+achieve** and **how to judge which stocks are the best ones to trade today** from
+price/volume data. The selection is implemented **deterministically** (a fixed
+formula, no LLM — see the deterministic approach and `config.py`); this document is
+the human/LLM-facing explanation of that methodology, and is fed to the LLM decision
+stage as context. It is about *research and selection only* — deciding which handful
+of stocks are worth trading. It says
 nothing about *execution* (when exactly to buy or sell, how much to buy, when to
 cut a loss). Execution is a separate concern handled elsewhere, later.
 
@@ -68,8 +72,9 @@ is weak (e.g. a wider spread than the others), say so rather than glossing over 
 ## What this research deliberately does NOT do
 
 - **No fundamentals or news.** The broker's market-data API only exposes price,
-  volume, and the order book — so this is a purely price-and-volume ("technical")
-  read. A stock that jumps on news this research can't see is a known blind spot.
+  volume, and the order book — so this is a purely price-and-volume
+  (financial-technical) read. A stock that jumps on news this research can't see is
+  a known blind spot.
 - **No execution decisions.** Position size, exact entry/exit timing, stop-loss
   levels, and daily loss limits are all execution concerns, handled later — not
   here. This step only answers *which stocks*, not *how much* or *when*.

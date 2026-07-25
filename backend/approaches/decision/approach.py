@@ -25,14 +25,17 @@ class DecisionApproach(ResearchApproach):
     def run(self, strategy, run_dt, llm_runs=None, **opts):
         n = llm_runs or strategy.llm_decision_runs()
 
-        tech_run_id, picks = db.latest_technical_run_today(strategy.name)
-        if tech_run_id is None or not picks:
-            log.info("No technical picks today — nothing to decide. Run technical first.")
+        det_run_id, picks = db.latest_deterministic_run_today(strategy.name)
+        if det_run_id is None or not picks:
+            log.info(
+                "No deterministic picks today — nothing to decide. "
+                "Run the deterministic approach first."
+            )
             return {"decision_id": None}
 
         news_run_id, _fields, companies = db.latest_news_run_today(strategy.name)
         if news_run_id is None:
-            log.info("No news run today — deciding on technical data only.")
+            log.info("No news run today — deciding on deterministic data only.")
 
         candidates, excluded = [], []
         for p in picks:
@@ -57,7 +60,7 @@ class DecisionApproach(ResearchApproach):
                 log.warning("  run %d/%d produced no answer (skipped).", i, n)
                 continue
             db.save_llm_run(
-                strategy.name, run_dt, tech_run_id, news_run_id, i, model, run_picks
+                strategy.name, run_dt, det_run_id, news_run_id, i, model, run_picks
             )
             all_runs.append(run_picks)
             order = " > ".join(
@@ -94,7 +97,8 @@ def _prompt(strategy, candidates, companies):
         "strategy. Using ONLY the strategy documents and the data provided, decide "
         "which of the candidate stocks are the best to BUY today for small, "
         "consistent intraday gains. Do not use outside knowledge or invent data.\n\n"
-        "=== TECHNICAL APPROACH ===\n" + strategy.technical_doc() + "\n\n"
+        "=== FINANCIAL-TECHNICAL APPROACH ===\n"
+        + strategy.financial_technical_doc() + "\n\n"
         "=== NEWS APPROACH ===\n" + (strategy.news_doc() or "(none)")
     )
     user = (

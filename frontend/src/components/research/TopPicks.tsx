@@ -1,19 +1,19 @@
 import { useState } from "react";
 
-import type { DecisionData, TechnicalPick } from "../../research/api";
+import type { DecisionData, DeterministicPick } from "../../research/api";
 import { scoreColor } from "../../scoreColor";
 import { IndividualAnalyses } from "./IndividualAnalyses";
 
 export function TopPicks({
   decision,
-  technical,
+  deterministic,
 }: {
   decision: DecisionData;
-  technical: TechnicalPick[];
+  deterministic: DeterministicPick[];
 }) {
   const [open, setOpen] = useState(false);
   const metricsByTicker = Object.fromEntries(
-    technical.map((p) => [p.ticker, p.metrics]),
+    deterministic.map((p) => [p.ticker, p.metrics]),
   );
   const n = decision.num_runs;
 

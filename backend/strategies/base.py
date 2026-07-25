@@ -34,7 +34,7 @@ class Strategy:
     def news_settings(self):
         return NewsSettings(enabled=False)
 
-    def technical_doc(self):
+    def financial_technical_doc(self):
         raise NotImplementedError
 
     def news_doc(self):

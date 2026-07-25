@@ -140,6 +140,6 @@ def gather_raw(settings, tickers):
             max_uses=1,
         )
     else:
-        log.info("No technical picks today — skipping company news search.")
+        log.info("No deterministic picks today — skipping company news search.")
 
     return items

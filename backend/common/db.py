@@ -17,7 +17,7 @@ def init_db():
     with _connect() as conn:
         conn.executescript(
             """
-            CREATE TABLE IF NOT EXISTS technical_runs (
+            CREATE TABLE IF NOT EXISTS deterministic_runs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 strategy TEXT NOT NULL,
                 analysis_date TEXT NOT NULL,
@@ -25,9 +25,9 @@ def init_db():
                 created_at TEXT NOT NULL
             );
 
-            CREATE TABLE IF NOT EXISTS technical_picks (
+            CREATE TABLE IF NOT EXISTS deterministic_picks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                run_id INTEGER NOT NULL REFERENCES technical_runs(id),
+                run_id INTEGER NOT NULL REFERENCES deterministic_runs(id),
                 ticker TEXT NOT NULL,
                 rank INTEGER NOT NULL,
                 score REAL NOT NULL,
@@ -39,7 +39,7 @@ def init_db():
                 strategy TEXT NOT NULL,
                 analysis_date TEXT NOT NULL,
                 analysis_datetime TEXT NOT NULL,
-                technical_run_id INTEGER REFERENCES technical_runs(id),
+                deterministic_run_id INTEGER REFERENCES deterministic_runs(id),
                 macro_summary TEXT,
                 market_summary TEXT,
                 international_summary TEXT,
@@ -60,7 +60,7 @@ def init_db():
                 strategy TEXT NOT NULL,
                 analysis_date TEXT NOT NULL,
                 analysis_datetime TEXT NOT NULL,
-                technical_run_id INTEGER REFERENCES technical_runs(id),
+                deterministic_run_id INTEGER REFERENCES deterministic_runs(id),
                 news_run_id INTEGER REFERENCES news_runs(id),
                 run_index INTEGER NOT NULL,
                 model TEXT NOT NULL,
@@ -80,7 +80,7 @@ def init_db():
                 strategy TEXT NOT NULL,
                 analysis_date TEXT NOT NULL,
                 analysis_datetime TEXT NOT NULL,
-                technical_run_id INTEGER REFERENCES technical_runs(id),
+                deterministic_run_id INTEGER REFERENCES deterministic_runs(id),
                 news_run_id INTEGER REFERENCES news_runs(id),
                 num_runs INTEGER NOT NULL,
                 created_at TEXT NOT NULL
@@ -99,13 +99,13 @@ def init_db():
         )
 
 
-# --- Technical ---------------------------------------------------------------
+# --- Deterministic -----------------------------------------------------------
 
-def save_technical_run(strategy, run_dt, picks):
+def save_deterministic_run(strategy, run_dt, picks):
     with _connect() as conn:
         cur = conn.execute(
             """
-            INSERT INTO technical_runs (strategy, analysis_date, analysis_datetime,
+            INSERT INTO deterministic_runs (strategy, analysis_date, analysis_datetime,
                                         created_at)
             VALUES (?, ?, ?, ?)
             """,
@@ -120,7 +120,7 @@ def save_technical_run(strategy, run_dt, picks):
         for c in picks:
             conn.execute(
                 """
-                INSERT INTO technical_picks (run_id, ticker, rank, score, metrics_json)
+                INSERT INTO deterministic_picks (run_id, ticker, rank, score, metrics_json)
                 VALUES (?, ?, ?, ?, ?)
                 """,
                 (run_id, c["ticker"], c["rank"], c["score"], json.dumps(c["metrics"])),
@@ -128,13 +128,13 @@ def save_technical_run(strategy, run_dt, picks):
         return run_id
 
 
-def latest_technical_run_today(strategy, today=None):
-    """Return (run_id, picks) for the newest technical run dated today, or (None, [])."""
+def latest_deterministic_run_today(strategy, today=None):
+    """Return (run_id, picks) for the newest deterministic run dated today, or (None, [])."""
     today = today or date.today().isoformat()
     with _connect() as conn:
         row = conn.execute(
             """
-            SELECT id FROM technical_runs
+            SELECT id FROM deterministic_runs
             WHERE strategy = ? AND analysis_date = ?
             ORDER BY analysis_datetime DESC LIMIT 1
             """,
@@ -152,7 +152,7 @@ def latest_technical_run_today(strategy, today=None):
             }
             for t, rank, score, metrics_json in conn.execute(
                 """
-                SELECT ticker, rank, score, metrics_json FROM technical_picks
+                SELECT ticker, rank, score, metrics_json FROM deterministic_picks
                 WHERE run_id = ? ORDER BY rank
                 """,
                 (run_id,),
@@ -163,12 +163,12 @@ def latest_technical_run_today(strategy, today=None):
 
 # --- News --------------------------------------------------------------------
 
-def save_news_run(strategy, run_dt, technical_run_id, brief, company_rows):
+def save_news_run(strategy, run_dt, deterministic_run_id, brief, company_rows):
     with _connect() as conn:
         cur = conn.execute(
             """
             INSERT INTO news_runs (strategy, analysis_date, analysis_datetime,
-                                   technical_run_id, macro_summary, market_summary,
+                                   deterministic_run_id, macro_summary, market_summary,
                                    international_summary, market_risk_score, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -176,7 +176,7 @@ def save_news_run(strategy, run_dt, technical_run_id, brief, company_rows):
                 strategy,
                 run_dt.date().isoformat(),
                 run_dt.isoformat(),
-                technical_run_id,
+                deterministic_run_id,
                 brief.macro_summary,
                 brief.market_summary,
                 brief.international_summary,
@@ -231,12 +231,12 @@ def latest_news_run_today(strategy, today=None):
 
 # --- LLM decision ------------------------------------------------------------
 
-def save_llm_run(strategy, run_dt, technical_run_id, news_run_id, run_index, model, picks):
+def save_llm_run(strategy, run_dt, deterministic_run_id, news_run_id, run_index, model, picks):
     with _connect() as conn:
         cur = conn.execute(
             """
             INSERT INTO llm_runs (strategy, analysis_date, analysis_datetime,
-                                  technical_run_id, news_run_id, run_index, model,
+                                  deterministic_run_id, news_run_id, run_index, model,
                                   created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -244,7 +244,7 @@ def save_llm_run(strategy, run_dt, technical_run_id, news_run_id, run_index, mod
                 strategy,
                 run_dt.date().isoformat(),
                 run_dt.isoformat(),
-                technical_run_id,
+                deterministic_run_id,
                 news_run_id,
                 run_index,
                 model,
@@ -264,13 +264,13 @@ def save_llm_run(strategy, run_dt, technical_run_id, news_run_id, run_index, mod
 
 
 def save_llm_decision(
-    strategy, run_dt, technical_run_id, news_run_id, num_runs, aggregate
+    strategy, run_dt, deterministic_run_id, news_run_id, num_runs, aggregate
 ):
     with _connect() as conn:
         cur = conn.execute(
             """
             INSERT INTO llm_decisions (strategy, analysis_date, analysis_datetime,
-                                       technical_run_id, news_run_id, num_runs,
+                                       deterministic_run_id, news_run_id, num_runs,
                                        created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
@@ -278,7 +278,7 @@ def save_llm_decision(
                 strategy,
                 run_dt.date().isoformat(),
                 run_dt.isoformat(),
-                technical_run_id,
+                deterministic_run_id,
                 news_run_id,
                 num_runs,
                 datetime.now().isoformat(),
@@ -307,13 +307,13 @@ def save_llm_decision(
 # --- Read helpers for the API ------------------------------------------------
 
 def list_dates(strategy):
-    """Dates (newest first) that have at least one technical run."""
+    """Dates (newest first) that have at least one deterministic run."""
     with _connect() as conn:
         return [
             r[0]
             for r in conn.execute(
                 """
-                SELECT DISTINCT analysis_date FROM technical_runs
+                SELECT DISTINCT analysis_date FROM deterministic_runs
                 WHERE strategy = ? ORDER BY analysis_date DESC
                 """,
                 (strategy,),
@@ -322,21 +322,21 @@ def list_dates(strategy):
 
 
 def research_for_date(strategy, day):
-    """Assemble the latest technical/news/decision runs for a given date into a
-    single dict for the frontend. `has_data` is False when there's no technical run."""
-    tech_run_id, picks = latest_technical_run_today(strategy, day)
-    if tech_run_id is None:
+    """Assemble the latest deterministic/news/decision runs for a given date into
+    a single dict for the frontend. `has_data` is False when there's no run."""
+    det_run_id, picks = latest_deterministic_run_today(strategy, day)
+    if det_run_id is None:
         return {"date": day, "has_data": False}
 
     with _connect() as conn:
-        tech_dt = conn.execute(
-            "SELECT analysis_datetime FROM technical_runs WHERE id = ?", (tech_run_id,)
+        det_dt = conn.execute(
+            "SELECT analysis_datetime FROM deterministic_runs WHERE id = ?", (det_run_id,)
         ).fetchone()[0]
 
         result = {
             "date": day,
             "has_data": True,
-            "technical": {"run_datetime": tech_dt, "picks": picks},
+            "deterministic": {"run_datetime": det_dt, "picks": picks},
             "news": None,
             "decision": None,
         }

@@ -5,7 +5,7 @@ export interface Metrics {
   momentum_today_pct: number;
 }
 
-export interface TechnicalPick {
+export interface DeterministicPick {
   ticker: string;
   rank: number;
   score: number;
@@ -55,7 +55,7 @@ export interface DecisionData {
 export interface Research {
   date: string;
   has_data: boolean;
-  technical?: { run_datetime: string; picks: TechnicalPick[] };
+  deterministic?: { run_datetime: string; picks: DeterministicPick[] };
   news?: NewsData | null;
   decision?: DecisionData | null;
 }

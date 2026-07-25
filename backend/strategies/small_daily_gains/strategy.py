@@ -74,8 +74,8 @@ class SmallDailyGains(Strategy):
             company_profiles=config.COMPANY_PROFILES,
         )
 
-    def technical_doc(self):
-        return (DOCS / "technical-approach.md").read_text(encoding="utf-8")
+    def financial_technical_doc(self):
+        return (DOCS / "financial-technical-approach.md").read_text(encoding="utf-8")
 
     def news_doc(self):
         return (DOCS / "news-approach.md").read_text(encoding="utf-8")
