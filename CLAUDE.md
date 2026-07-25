@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Frontend scaffolding exists (`frontend/`, React + TypeScript via Vite); no backend yet. The dashboard currently renders hardcoded dummy data — no PPI API calls are wired up (the user's PPI account isn't activated yet).
+`frontend/` (React + TypeScript via Vite) renders a dashboard from hardcoded dummy data. `backend/` (Python) has the analysis phase of the trading agent: it scans a watchlist, ranks the top 3 stocks for a "small, consistent daily gains" strategy, and stores the results in SQLite. Neither talks to the real PPI API yet — the user's PPI account isn't activated, so both use mock data shaped like the real API responses.
 
 ## Purpose
 
@@ -34,6 +34,53 @@ Light theme only (no dark mode). The chrome is discrete light blue; red/green is
 | Border (hairline) | `--border` | `#d5e3f2` |
 | Gain (delta ↑) | `--gain` | `#006300` |
 | Loss (delta ↓) | `--loss` | `#d03b3b` |
+
+## Backend / Research agent
+
+`backend/` is plain Python (venv + `requirements.txt`, no framework). Commands (run from `backend/`):
+
+```
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env        # then put your key in .env
+python run_research.py                       # runs all approaches in order
+python run_research.py --research technical  # or just one: technical | news | decision
+python run_research.py --research decision --llm-runs 5   # override the ensemble size
+```
+
+`ANTHROPIC_API_KEY` is loaded from `backend/.env` (via `python-dotenv`); `.env.example` is the committed template, `.env` is gitignored — never commit the real key. `--strategy small-daily-gains` is the default. Every run writes a timestamped log (with per-approach analysis summaries) to `backend/logs/research.log`.
+
+### Three layers: `common/` (infra) · `approaches/` (research approaches) · `strategies/` (per-strategy)
+
+```
+backend/
+  common/            shared, strategy-agnostic infra: ppi_client, metrics, llm, db, log
+  approaches/        the research approaches — modular siblings, run in order
+    base.py          ResearchApproach interface + ordered registry
+    technical/       (order 1) deterministic: data → metrics → rank → store  (NO Claude)
+    news/            (order 2) read today's technical picks → news → store  (sources.py + brief.py)
+    decision/        (order 3) LLM ensemble → store each call + averaged aggregate
+  strategies/
+    base.py          Strategy interface + registry
+    small_daily_gains/  strategy.py, config.py, research/{technical,news}-approach.md
+  run_research.py    CLI: --research {technical,news,decision,all}, --strategy, --llm-runs
+```
+
+**Two independent axes:** *strategy* (what rules to use) and *research approach* (which stage to run). Add a strategy → a folder under `strategies/`; add an approach → a folder under `approaches/` implementing `ResearchApproach` (`name`, `order`, `run(strategy, run_dt)`) and `@register`ed. Neither touches shared code.
+
+### The three approaches (run in order; each independently runnable, hands off via the DB)
+1. **Technical** (`approaches/technical/`) — **deterministic, no Claude, runs with no API key.** Gathers market data, computes the three pillars (volatility=`avg_daily_range_pct`, liquidity=`avg_volume`+`spread_pct`, momentum=`momentum_today_pct`), screens (`MIN_DAILY_RANGE_PCT`) and scores 0–100, stores the **top 5** picks (`FINAL_COUNT`) with a full timestamp.
+2. **News** (`approaches/news/`) — reads **today's latest technical run** from the DB and researches **only those tickers** (macro/market/international always; company search skipped if there are no picks). `sources.py` prefers RSS / known URLs, falls back to a scoped Claude web-search; `brief.py` summarizes into a `NewsBrief` (macro/market/international + per-company catalyst flags). **Fetched web content is untrusted** — the summarizer never follows instructions embedded in a page. It's a **safety-veto layer**, never a re-ranker.
+3. **Decision** (`approaches/decision/`) — the **final "which stocks to buy" call**, run as an **ensemble** (`--llm-runs`, default `LLM_DECISION_RUNS = 5`). Applies the catalyst veto, then makes N independent Claude calls each ranking the candidates with a short reason. **Every call is stored individually** so answers can be compared; the aggregate is a deterministic **average rank** (+ times-ranked-#1) giving an ordered recommendation and a consistency read.
+
+### Design invariants
+- **Deterministic technical rank; Claude judges at the decision stage; news only vetoes/warns.** Technical order is reproducible; the decision ensemble surfaces the LLM's judgment *and* its consistency across runs; news can exclude a catalyst stock or flag a risk-off day but never reorders.
+- **Models:** news = `claude-sonnet-5`; decision = `claude-sonnet-5` (`DECISION_MODEL` in `common/llm.py`) — it's an N-call ensemble, so Sonnet by default; switch to Opus for max quality on the money decision.
+- Scores are **heuristic suitability (0–100), not calibrated probabilities.** `~0.85%` round-trip cost is an estimate — re-verify against the real PPI tier.
+- **Swapping in the real PPI API:** write a class with the same `.current`/`.search`/`.book` interface as `MockPPIClient` and pass it to the technical approach's `run(strategy, run_dt, client=...)`.
+- **DB** (`data/merval_research.db`, gitignored) stores each stage separately with a full `analysis_datetime`: `technical_runs`/`technical_picks`, `news_runs`/`news_company`, `llm_runs`/`llm_run_picks` (individual calls) + `llm_decisions`/`llm_decision_picks` (aggregate). News & decision feed from the **latest technical run of the current day**.
+
+**Pre-existing trading skills** (research-only, none Merval/PPI-specific — optional future references, not used): `agiprolabs/claude-trading-skills`, `zubair-trabzada/ai-trading-claude`, `tradermonty/claude-trading-skills`, `OctagonAI/skills`. Prefer the repo's own strategy files over pulling third-party trading code (supply-chain risk; none target this market).
 
 ## Commit conventions
 
