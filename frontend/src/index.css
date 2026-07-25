@@ -148,3 +148,375 @@ body {
   border-color: var(--accent);
   background-color: var(--accent-soft);
 }
+
+/* --- Nav bar + tabs --- */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 24px;
+  background-color: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+
+.brand {
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.01em;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 18px 12px;
+  cursor: pointer;
+}
+
+.nav-tab:hover {
+  color: var(--text-primary);
+}
+
+.nav-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.app-main {
+  padding-top: 56px;
+}
+
+/* --- Research tab --- */
+.research {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+}
+
+.research-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.date-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.date-label input {
+  font-family: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  background: var(--surface-1);
+}
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 28px 0 12px;
+  color: var(--text-primary);
+}
+
+/* Gauge */
+.gauge-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.gauge-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.gauge-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.gauge-number {
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.gauge-max {
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.gauge-meter {
+  position: relative;
+  flex: 1;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    to right,
+    hsl(0, 65%, 88%),
+    hsl(60, 65%, 88%),
+    hsl(120, 65%, 88%)
+  );
+  overflow: hidden;
+}
+
+.gauge-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 6px;
+}
+
+.gauge-mid {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.gauge-caption {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.gauge-note {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+/* Picks */
+.picks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pick-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+
+.pick-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.pick-rank {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.pick-ticker {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 1.05rem;
+}
+
+.pick-agree {
+  margin-left: auto;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pick-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 8px 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.pick-why {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.link-toggle {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-toggle:hover {
+  text-decoration: underline;
+}
+
+.analyses {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.analysis-card {
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.analysis-head {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+
+.analysis-model {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.analysis-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.analysis-list li {
+  margin-bottom: 4px;
+}
+
+/* News */
+.news-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px 20px 16px;
+}
+
+.news-block {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.news-block:last-child {
+  border-bottom: none;
+}
+
+.news-block p {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.news-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.news-companies {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.news-companies li {
+  margin-bottom: 4px;
+}
+
+.catalyst-tag {
+  display: inline-block;
+  margin: 0 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--loss);
+  background: color-mix(in srgb, var(--loss) 14%, var(--surface-1));
+}
+
+/* Spinner + empty state */
+.spinner-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 60px 0;
+  color: var(--text-secondary);
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 60px 0;
+  color: var(--text-secondary);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: #1f66bd;
+}

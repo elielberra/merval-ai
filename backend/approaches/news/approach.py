@@ -6,6 +6,9 @@ from . import gather
 
 log = get_logger("news")
 
+# Below this 0-100 trading-conditions score, warn that it's a poor day to trade.
+RISK_WARN_THRESHOLD = 40
+
 
 @register
 class NewsApproach(ResearchApproach):
@@ -39,8 +42,12 @@ class NewsApproach(ResearchApproach):
             strategy.name, run_dt, tech_run_id, brief, company_rows
         )
         _log_summary(brief, tickers, notes)
-        if brief.market_risk == "risk_off":
-            log.warning("Market risk is RISK-OFF — consider sitting out or trading small.")
+        if brief.market_risk_score < RISK_WARN_THRESHOLD:
+            log.warning(
+                "Trading-conditions score %d/100 — poor day; consider sitting out "
+                "or trading small.",
+                brief.market_risk_score,
+            )
 
         return {"news_run_id": news_run_id, "brief": brief, "tickers": tickers}
 
@@ -50,7 +57,7 @@ def _log_summary(brief, tickers, notes):
     lines.append(f"  Macro:  {brief.macro_summary or '(no data)'}")
     lines.append(f"  Market: {brief.market_summary or '(no data)'}")
     lines.append(f"  International: {brief.international_summary or '(no data)'}")
-    lines.append(f"  Market risk: {brief.market_risk}")
+    lines.append(f"  Trading-conditions score: {brief.market_risk_score}/100 (50=neutral)")
     if tickers:
         lines.append("  Per-company:")
         for t in tickers:

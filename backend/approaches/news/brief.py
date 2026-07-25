@@ -1,10 +1,6 @@
-from typing import Literal
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from common import llm
-
-MarketRisk = Literal["risk_on", "neutral", "risk_off"]
 
 
 class CompanyNote(BaseModel):
@@ -17,7 +13,9 @@ class NewsBrief(BaseModel):
     macro_summary: str = ""
     market_summary: str = ""
     international_summary: str = ""
-    market_risk: MarketRisk = "neutral"
+    # 0-100 trading-conditions score: 50 = neutral, >50 better/greener day to
+    # trade, <50 worse/redder. 100 = best possible day, 0 = worst.
+    market_risk_score: int = Field(default=50, ge=0, le=100)
     company_notes: list[CompanyNote] = []
 
     def company_notes_by_ticker(self):
@@ -60,9 +58,12 @@ def summarize(items, tickers, news_doc=""):
         "FX/dollar, debt, country risk) in 1-2 sentences; (2) market_summary — the "
         "general Merval/market mood today in 1-2 sentences; (3) international_summary "
         "— global events that could move the Merval today (US Fed / rates, wars and "
-        "geopolitics, global financial stress) in 1-2 sentences; (4) market_risk — "
-        "one of risk_on / neutral / risk_off, weighing BOTH the Argentine and "
-        "international picture; (5) company_notes — for EACH ticker below, a "
+        "geopolitics, global financial stress) in 1-2 sentences; (4) "
+        "market_risk_score — an INTEGER from 0 to 100 rating how good today is for "
+        "trading, weighing BOTH the Argentine and international picture: 50 = a "
+        "normal/neutral day, above 50 = calmer/more favorable (up to 100 = ideal), "
+        "below 50 = riskier/worse (down to 0 = avoid trading); (5) company_notes — "
+        "for EACH ticker below, a "
         "one-sentence note and has_catalyst_today = true only if it has a scheduled "
         "or breaking market-moving event today (earnings/quarterly results, merger or "
         "acquisition, analyst downgrade, lawsuit, regulatory/tariff ruling, major "

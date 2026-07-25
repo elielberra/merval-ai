@@ -43,7 +43,7 @@ def init_db():
                 macro_summary TEXT,
                 market_summary TEXT,
                 international_summary TEXT,
-                market_risk TEXT,
+                market_risk_score INTEGER,
                 created_at TEXT NOT NULL
             );
 
@@ -169,7 +169,7 @@ def save_news_run(strategy, run_dt, technical_run_id, brief, company_rows):
             """
             INSERT INTO news_runs (strategy, analysis_date, analysis_datetime,
                                    technical_run_id, macro_summary, market_summary,
-                                   international_summary, market_risk, created_at)
+                                   international_summary, market_risk_score, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
@@ -180,7 +180,7 @@ def save_news_run(strategy, run_dt, technical_run_id, brief, company_rows):
                 brief.macro_summary,
                 brief.market_summary,
                 brief.international_summary,
-                brief.market_risk,
+                brief.market_risk_score,
                 datetime.now().isoformat(),
             ),
         )
@@ -202,7 +202,8 @@ def latest_news_run_today(strategy, today=None):
     with _connect() as conn:
         row = conn.execute(
             """
-            SELECT id, macro_summary, market_summary, international_summary, market_risk
+            SELECT id, macro_summary, market_summary, international_summary,
+                   market_risk_score
             FROM news_runs
             WHERE strategy = ? AND analysis_date = ?
             ORDER BY analysis_datetime DESC LIMIT 1
@@ -216,7 +217,7 @@ def latest_news_run_today(strategy, today=None):
             "macro_summary": row[1],
             "market_summary": row[2],
             "international_summary": row[3],
-            "market_risk": row[4],
+            "market_risk_score": row[4],
         }
         companies = {
             t: {"summary": summary, "has_catalyst": bool(has_catalyst)}
@@ -301,3 +302,105 @@ def save_llm_decision(
                 ),
             )
         return decision_id
+
+
+# --- Read helpers for the API ------------------------------------------------
+
+def list_dates(strategy):
+    """Dates (newest first) that have at least one technical run."""
+    with _connect() as conn:
+        return [
+            r[0]
+            for r in conn.execute(
+                """
+                SELECT DISTINCT analysis_date FROM technical_runs
+                WHERE strategy = ? ORDER BY analysis_date DESC
+                """,
+                (strategy,),
+            )
+        ]
+
+
+def research_for_date(strategy, day):
+    """Assemble the latest technical/news/decision runs for a given date into a
+    single dict for the frontend. `has_data` is False when there's no technical run."""
+    tech_run_id, picks = latest_technical_run_today(strategy, day)
+    if tech_run_id is None:
+        return {"date": day, "has_data": False}
+
+    with _connect() as conn:
+        tech_dt = conn.execute(
+            "SELECT analysis_datetime FROM technical_runs WHERE id = ?", (tech_run_id,)
+        ).fetchone()[0]
+
+        result = {
+            "date": day,
+            "has_data": True,
+            "technical": {"run_datetime": tech_dt, "picks": picks},
+            "news": None,
+            "decision": None,
+        }
+
+        _news_run_id, fields, companies = latest_news_run_today(strategy, day)
+        if fields is not None:
+            result["news"] = {
+                **fields,
+                "companies": [
+                    {"ticker": t, **v} for t, v in companies.items()
+                ],
+            }
+
+        drow = conn.execute(
+            """
+            SELECT id, analysis_datetime, num_runs FROM llm_decisions
+            WHERE strategy = ? AND analysis_date = ?
+            ORDER BY analysis_datetime DESC LIMIT 1
+            """,
+            (strategy, day),
+        ).fetchone()
+        if drow:
+            decision_id, decision_dt, num_runs = drow
+            aggregate = [
+                {
+                    "ticker": t,
+                    "final_rank": fr,
+                    "avg_rank": ar,
+                    "times_first": tf,
+                    "why": why,
+                }
+                for t, fr, ar, tf, why in conn.execute(
+                    """
+                    SELECT ticker, final_rank, avg_rank, times_first, why
+                    FROM llm_decision_picks WHERE llm_decision_id = ?
+                    ORDER BY final_rank
+                    """,
+                    (decision_id,),
+                )
+            ]
+            runs = []
+            for run_id, run_index, model in conn.execute(
+                """
+                SELECT id, run_index, model FROM llm_runs
+                WHERE strategy = ? AND analysis_datetime = ?
+                ORDER BY run_index
+                """,
+                (strategy, decision_dt),
+            ):
+                run_picks = [
+                    {"ticker": t, "rank": rk, "reason": rs}
+                    for t, rk, rs in conn.execute(
+                        """
+                        SELECT ticker, rank, reason FROM llm_run_picks
+                        WHERE llm_run_id = ? ORDER BY rank
+                        """,
+                        (run_id,),
+                    )
+                ]
+                runs.append({"run_index": run_index, "model": model, "picks": run_picks})
+            result["decision"] = {
+                "num_runs": num_runs,
+                "aggregate": aggregate,
+                "runs": runs,
+            }
+
+        return result

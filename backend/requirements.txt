@@ -1,4 +1,6 @@
-anthropic
-pydantic
-feedparser
-python-dotenv
+anthropic==0.120.0
+pydantic==2.13.4
+feedparser==6.0.12
+python-dotenv==1.2.2
+fastapi==0.140.0
+uvicorn==0.51.0

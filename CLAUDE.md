@@ -14,13 +14,21 @@ Reference docs for the PPI API live in `ppi-official-api-docs/docs/` (a separate
 
 ## Frontend
 
-`frontend/` is a Vite + React + TypeScript app, styled with plain CSS (no UI framework). Commands (run from `frontend/`): `npm install`, `npm run dev`, `npm run build`.
+`frontend/` is a Vite + React + TypeScript app, plain CSS (no UI framework). Commands (from `frontend/`): `npm install`, `npm run dev`, `npm run build`.
 
-The dashboard (`src/components/Dashboard.tsx`, `src/components/StockCard.tsx`) shows today's positions from `src/data/dummyStocks.ts`, shaped to match the PPI REST API's instrument/position fields so it's a drop-in swap once the backend exists. Gain/loss is shown via a magnitude-banded green/red badge (see `src/index.css` for the band thresholds) — update `dummyStocks.ts` and the `Stock` type in `src/types.ts` together if the data shape changes. "Sell Now" / "Create Sell Order" buttons are currently inert placeholders (no backend to call yet).
+**Running the full app locally:** two processes — the backend API (`cd backend && source .venv/bin/activate && uvicorn api:app --port 8000`) and the frontend (`cd frontend && npm run dev`). Vite proxies `/api` → `localhost:8000` (`vite.config.ts`), so the app calls `/api/...` same-origin (no CORS).
+
+**Tabs** (`src/App.tsx`): a fixed top nav bar switches between two tabs.
+- **Research** (`src/components/research/`) — reads real results from the API. `ResearchTab.tsx` has a date picker (default today, `max=today`); if today has no data it shows a **Run analysis** button that POSTs `/api/research/run` and polls `/api/research/status` (spinner ~2 min) then reloads. With data it renders top-to-bottom: `MarketRiskGauge` (0–100 trading-conditions score, colored), `TopPicks` (the decision aggregate in order — metrics + why + "#1 in X/N" agreement — with a collapsed toggle revealing the individual LLM analyses via `IndividualAnalyses`), and `NewsSummary`. API client + types in `src/research/api.ts`.
+- **Positions** (`src/components/Dashboard.tsx`, `StockCard.tsx`) — the original screen, **unchanged**: today's positions from `src/data/dummyStocks.ts` with a magnitude-banded green/red gain/loss badge and inert Sell buttons.
 
 ### Color palette (light theme — keep this discrete, light-blue look)
 
-Light theme only (no dark mode). The chrome is discrete light blue; red/green is reserved for the gain/loss delta so semantics stay unambiguous. Tokens are CSS custom properties in `src/index.css`:
+Light theme only (no dark mode). The chrome is discrete light blue. Two distinct color conventions:
+- **Two-color gain/loss** (`--gain` green / `--loss` red) for *signed* deltas — used on the Positions tab. Unchanged.
+- **Red→yellow→green scale** for any *0–100 "higher-is-better" percentage* — via `scoreColor(pct)` in `src/scoreColor.ts` (`hsl(pct*1.2,65%,45%)`: red@0 → **yellow@50 (neutral)** → green@100). Used by the market-risk gauge and the LLM agreement metric; **use this for any future 0–100 metric.** (Backend `market_risk_score` is a 0–100 int, 50 = neutral, higher = better.)
+
+Tokens are CSS custom properties in `src/index.css`:
 
 | Role | Token | Value |
 |------|-------|-------|
@@ -64,6 +72,7 @@ backend/
     base.py          Strategy interface + registry
     small_daily_gains/  strategy.py, config.py, research/{technical,news}-approach.md
   run_research.py    CLI: --research {technical,news,decision,all}, --strategy, --llm-runs
+  api.py             FastAPI service the frontend calls (GET /api/research|dates|research/status, POST /api/research/run — background thread). See the Frontend section for running it.
 ```
 
 **Two independent axes:** *strategy* (what rules to use) and *research approach* (which stage to run). Add a strategy → a folder under `strategies/`; add an approach → a folder under `approaches/` implementing `ResearchApproach` (`name`, `order`, `run(strategy, run_dt)`) and `@register`ed. Neither touches shared code.
