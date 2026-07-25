@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 from pydantic import BaseModel
 
 from approaches.base import ResearchApproach, register
@@ -51,11 +53,15 @@ class DecisionApproach(ResearchApproach):
 
         system, user = _prompt(strategy, candidates, companies)
         model = llm.DECISION_MODEL
-        log.info("Running %d independent LLM decision call(s) with %s...", n, model)
+        log.info("Decision prompt — system:\n%s\n\nuser:\n%s", system, user)
+        log.info("Running %d concurrent LLM decision call(s) with %s...", n, model)
+
+        with ThreadPoolExecutor(max_workers=n) as executor:
+            futures = [executor.submit(_one_call, system, user, model) for _ in range(n)]
 
         all_runs = []
-        for i in range(1, n + 1):
-            run_picks = _one_call(system, user, model)
+        for i, future in enumerate(futures, start=1):
+            run_picks = future.result()
             if not run_picks:
                 log.warning("  run %d/%d produced no answer (skipped).", i, n)
                 continue

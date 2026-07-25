@@ -1,9 +1,9 @@
 from anthropic import Anthropic
 
 NEWS_MODEL = "claude-sonnet-5"
-# Final stock-pick decision. Sonnet by default since it's run as an ensemble
-# (multiple calls); switch to "claude-opus-4-8" for max quality on the decision.
-DECISION_MODEL = "claude-sonnet-5"
+# Final stock-pick decision — the most critical call, so Opus for max quality.
+# The ensemble runs its calls concurrently, so the slower model costs little wall time.
+DECISION_MODEL = "claude-opus-5"
 
 
 def client():
