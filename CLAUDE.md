@@ -87,6 +87,7 @@ backend/
 - **Models:** news = `claude-sonnet-5`; decision = `claude-sonnet-5` (`DECISION_MODEL` in `common/llm.py`) — it's an N-call ensemble, so Sonnet by default; switch to Opus for max quality on the money decision.
 - Scores are **heuristic suitability (0–100), not calibrated probabilities.** `~0.85%` round-trip cost is an estimate — re-verify against the real PPI tier.
 - **Swapping in the real PPI API:** write a class with the same `.current`/`.search`/`.book` interface as `MockPPIClient` and pass it to the deterministic approach's `run(strategy, run_dt, client=...)`.
+- **Resetting the DB:** `backend/scripts/reset_db.sh` deletes all rows from every table (schema left intact, `VACUUM`ed after). Prompts for confirmation unless run with `-y`/`--force`.
 - **DB** (`data/merval_research.db`, gitignored) stores each stage separately with a full `analysis_datetime`: `deterministic_runs`/`deterministic_picks`, `news_runs`/`news_company`, `llm_runs`/`llm_run_picks` (individual calls) + `llm_decisions`/`llm_decision_picks` (aggregate). News & decision feed from the **latest deterministic run of the current day**.
 
 **Pre-existing trading skills** (research-only, none Merval/PPI-specific — optional future references, not used): `agiprolabs/claude-trading-skills`, `zubair-trabzada/ai-trading-claude`, `tradermonty/claude-trading-skills`, `OctagonAI/skills`. Prefer the repo's own strategy files over pulling third-party trading code (supply-chain risk; none target this market).

@@ -8,8 +8,10 @@ import approaches  # noqa: F401  (registers the approaches)
 import strategies  # noqa: F401  (registers the strategies)
 from approaches.base import get_approach, names, ordered
 from common.db import init_db
-from common.log import setup_logging
+from common.log import get_logger, setup_logging
 from strategies.base import available, get_strategy
+
+log = get_logger("research")
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -38,8 +40,14 @@ def main():
         f"at {run_dt.isoformat(timespec='seconds')}\n"
     )
 
-    for approach in to_run:
-        approach.run(strategy, run_dt, llm_runs=args.llm_runs)
+    try:
+        for approach in to_run:
+            log.info("Running %s approach...", approach.name)
+            approach.run(strategy, run_dt, llm_runs=args.llm_runs)
+        log.info("Research run complete for strategy=%s.", strategy.name)
+    except Exception:
+        log.exception("Research run failed.")
+        raise
 
     print(f"\nDone. Full log (incl. analysis summaries): {log_file}")
     print("Results stored in data/merval_research.db.")

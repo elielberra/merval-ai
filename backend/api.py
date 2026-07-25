@@ -9,11 +9,14 @@ import approaches  # noqa: F401  (registers the approaches)
 import strategies  # noqa: F401  (registers the strategies)
 from approaches.base import ordered
 from common import db
-from common.log import setup_logging
+from common.log import get_logger, setup_logging
 from strategies.base import get_strategy
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 setup_logging()
+db.init_db()
+
+log = get_logger("research")
 
 app = FastAPI(title="merval-ai research API")
 
@@ -27,10 +30,14 @@ def _run_all(strategy_name, llm_runs):
         db.init_db()
         strategy = get_strategy(strategy_name)
         run_dt = datetime.now()
+        log.info("Research run started for strategy=%s.", strategy_name)
         for approach in ordered():
+            log.info("Running %s approach...", approach.name)
             approach.run(strategy, run_dt, llm_runs=llm_runs)
+        log.info("Research run complete for strategy=%s.", strategy_name)
         _status = {"running": False, "error": None, "finished_at": datetime.now().isoformat()}
     except Exception as exc:  # noqa: BLE001
+        log.exception("Research run failed: %s", exc)
         _status = {"running": False, "error": str(exc), "finished_at": datetime.now().isoformat()}
 
 

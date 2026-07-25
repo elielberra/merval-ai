@@ -74,9 +74,10 @@ class DecisionApproach(ResearchApproach):
 
         aggregate = _aggregate(candidates, all_runs)
         decision_id = db.save_llm_decision(
-            strategy.name, run_dt, tech_run_id, news_run_id, len(all_runs), aggregate
+            strategy.name, run_dt, det_run_id, news_run_id, len(all_runs), aggregate
         )
         _log_decision(aggregate, len(all_runs))
+        log.info("Decision approach complete (decision_id=%d).", decision_id)
         return {"decision_id": decision_id, "aggregate": aggregate}
 
 

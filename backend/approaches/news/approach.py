@@ -49,6 +49,7 @@ class NewsApproach(ResearchApproach):
                 brief.market_risk_score,
             )
 
+        log.info("News approach complete (run_id=%d).", news_run_id)
         return {"news_run_id": news_run_id, "brief": brief, "tickers": tickers}
 
 

@@ -16,6 +16,7 @@ export function ResearchTab() {
   const [data, setData] = useState<Research | null>(null);
   const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
+  const [runError, setRunError] = useState<string | null>(null);
   const pollRef = useRef<number | null>(null);
 
   const load = useCallback(async (d: string) => {
@@ -39,12 +40,17 @@ export function ResearchTab() {
 
   const onRun = async () => {
     setRunning(true);
+    setRunError(null);
     await triggerRun();
     pollRef.current = window.setInterval(async () => {
       const s = await fetchStatus();
       if (!s.running) {
         if (pollRef.current) window.clearInterval(pollRef.current);
         setRunning(false);
+        if (s.error) {
+          setRunError(s.error);
+          return;
+        }
         setDate(todayISO());
         await load(todayISO());
       }
@@ -68,7 +74,14 @@ export function ResearchTab() {
         </label>
       </div>
 
-      {running ? (
+      {runError ? (
+        <div className="empty-state">
+          <p>Analysis failed: {runError}</p>
+          <button className="btn-primary" onClick={onRun}>
+            Retry analysis
+          </button>
+        </div>
+      ) : running ? (
         <Spinner label="Running analysis… this takes ~2 minutes" />
       ) : loading ? (
         <Spinner label="Loading…" />

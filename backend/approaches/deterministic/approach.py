@@ -41,4 +41,5 @@ class DeterministicApproach(ResearchApproach):
             len(picks),
             ", ".join(f"{c['ticker']}({c['score']:.1f})" for c in picks) or "(none)",
         )
+        log.info("Deterministic approach complete (run_id=%d).", run_id)
         return {"run_id": run_id, "picks": picks}
