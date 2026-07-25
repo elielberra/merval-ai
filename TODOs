@@ -1,0 +1,2 @@
+- Make LLM analysis calls concurrent
+- Add types to python code 
