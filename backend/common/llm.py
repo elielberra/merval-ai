@@ -6,5 +6,5 @@ NEWS_MODEL = "claude-sonnet-5"
 DECISION_MODEL = "claude-opus-5"
 
 
-def client():
+def client() -> Anthropic:
     return Anthropic()

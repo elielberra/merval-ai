@@ -1,4 +1,6 @@
-WATCHLIST = [
+from common.types import CompanyProfile
+
+WATCHLIST: list[str] = [
     "GGAL",
     "YPFD",
     "PAMP",
@@ -17,11 +19,11 @@ WATCHLIST = [
     "EDN",
 ]
 
-INSTRUMENT_TYPE = "ACCIONES"
-MARKET = "BYMA"
-SETTLEMENT = "A-24HS"
+INSTRUMENT_TYPE: str = "ACCIONES"
+MARKET: str = "BYMA"
+SETTLEMENT: str = "A-24HS"
 
-LOOKBACK_DAYS = 20
+LOOKBACK_DAYS: int = 20
 
 # --- Deterministic selection parameters --------------------------------------
 # The numbers the deterministic stage screens and scores with. The reasoning is
@@ -34,39 +36,39 @@ LOOKBACK_DAYS = 20
 # traded amount: PPI commission (~0.6% + 21% IVA, with the intraday smaller-leg
 # waiver so it is effectively paid once) plus BYMA market fees (~0.05% per leg).
 # Re-verify against the real PPI account tier once credentials are available.
-ROUND_TRIP_COST_PCT = 0.85
+ROUND_TRIP_COST_PCT: float = 0.85
 
 # A stock is only worth trading if it typically moves enough to leave a profit
 # after costs. The minimum typical daily range is set to roughly the round-trip
 # cost plus a modest profit margin — stocks below this are dropped from selection.
-MIN_PROFIT_MARGIN_PCT = 1.0
-MIN_DAILY_RANGE_PCT = ROUND_TRIP_COST_PCT + MIN_PROFIT_MARGIN_PCT
+MIN_PROFIT_MARGIN_PCT: float = 1.0
+MIN_DAILY_RANGE_PCT: float = ROUND_TRIP_COST_PCT + MIN_PROFIT_MARGIN_PCT
 
 # Scoring weights — the three pillars from research/financial-technical-approach.md.
-RANGE_WEIGHT = 0.35
-VOLUME_WEIGHT = 0.25
-SPREAD_WEIGHT = 0.20
-MOMENTUM_WEIGHT = 0.20
+RANGE_WEIGHT: float = 0.35
+VOLUME_WEIGHT: float = 0.25
+SPREAD_WEIGHT: float = 0.20
+MOMENTUM_WEIGHT: float = 0.20
 
-FINAL_COUNT = 5
+FINAL_COUNT: int = 5
 
 # Number of independent LLM calls the decision stage makes, then averages, to
 # check answer consistency. Overridable at the CLI with --llm-runs.
-LLM_DECISION_RUNS = 5
+LLM_DECISION_RUNS: int = 5
 
 # --- News settings -----------------------------------------------------------
 # Trusted sources per tier (see research/news-approach.md). Company news is
 # fetched only for the top NEWS_TOP_N deterministic candidates.
-NEWS_ENABLED = True
-NEWS_TOP_N = 5
+NEWS_ENABLED: bool = True
+NEWS_TOP_N: int = 5
 
 # Argentine macro + Merval-market tiers: trusted local outlets.
-NEWS_MACRO_DOMAINS = ["ambito.com", "infobae.com", "indec.gob.ar", "bcra.gob.ar"]
-NEWS_MARKET_DOMAINS = ["cronista.com", "ambito.com"]
+NEWS_MACRO_DOMAINS: list[str] = ["ambito.com", "infobae.com", "indec.gob.ar", "bcra.gob.ar"]
+NEWS_MARKET_DOMAINS: list[str] = ["cronista.com", "ambito.com"]
 
 # International tier: global events that tend to move the Merval (US Fed / rates,
 # wars/geopolitics, global financial stress). Scoped to reputable global press.
-NEWS_INTERNATIONAL_DOMAINS = [
+NEWS_INTERNATIONAL_DOMAINS: list[str] = [
     "reuters.com",
     "bloomberg.com",
     "ft.com",
@@ -77,12 +79,12 @@ NEWS_INTERNATIONAL_DOMAINS = [
 # Company tier: the authoritative, regulated catalyst source (kept as a scoped
 # check). Broader company news is searched on the OPEN web (no domain filter),
 # using each ticker's company name + US ADR (see COMPANY_PROFILES below).
-NEWS_COMPANY_OFFICIAL_DOMAINS = ["byma.com.ar"]
+NEWS_COMPANY_OFFICIAL_DOMAINS: list[str] = ["byma.com.ar"]
 
 # Ticker -> real company name + US ADR symbol (None where no major ADR). The ADR
 # name/symbol gives far richer English-language earnings/M&A coverage than the
 # local ticker, which is what the open-web company search keys off.
-COMPANY_PROFILES = {
+COMPANY_PROFILES: dict[str, CompanyProfile] = {
     "GGAL": {"name": "Grupo Financiero Galicia", "adr": "GGAL"},
     "YPFD": {"name": "YPF", "adr": "YPF"},
     "PAMP": {"name": "Pampa Energía", "adr": "PAM"},

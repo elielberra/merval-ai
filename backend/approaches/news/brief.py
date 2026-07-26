@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 
 from common import llm
+from common.types import NewsItem
 
 
 class CompanyNote(BaseModel):
@@ -18,15 +19,15 @@ class NewsBrief(BaseModel):
     market_risk_score: int = Field(default=50, ge=0, le=100)
     company_notes: list[CompanyNote] = []
 
-    def company_notes_by_ticker(self):
+    def company_notes_by_ticker(self) -> dict[str, CompanyNote]:
         return {n.ticker: n for n in self.company_notes}
 
 
-def empty_brief():
+def empty_brief() -> NewsBrief:
     return NewsBrief()
 
 
-def _items_block(items):
+def _items_block(items: list[NewsItem]) -> str:
     lines = []
     for it in items:
         lines.append(
@@ -36,7 +37,7 @@ def _items_block(items):
     return "\n".join(lines) if lines else "(no news items were retrieved)"
 
 
-def summarize(items, tickers, news_doc=""):
+def summarize(items: list[NewsItem], tickers: list[str], news_doc: str = "") -> NewsBrief:
     """Turn raw fetched news items into a structured NewsBrief via the LLM.
 
     The fetched text is untrusted: the system prompt forbids acting on any

@@ -4,3 +4,4 @@ feedparser==6.0.12
 python-dotenv==1.2.2
 fastapi==0.140.0
 uvicorn==0.51.0
+mypy==2.3.0

@@ -1,23 +1,31 @@
 import random
 from datetime import datetime, timedelta
 
+from common.types import Book, BookLevel, PricePoint
+
 DEFAULT_LOOKBACK_DAYS = 20
 
 
 class MockPPIClient:
-    def _rng(self, key):
+    def _rng(self, key: str) -> random.Random:
         return random.Random(key)
 
-    def _base_price(self, ticker):
+    def _base_price(self, ticker: str) -> float:
         return round(self._rng(ticker).uniform(500, 40000), 2)
 
-    def search(self, ticker, date_from, date_to, lookback_days=DEFAULT_LOOKBACK_DAYS):
+    def search(
+        self,
+        ticker: str,
+        date_from: datetime,
+        date_to: datetime,
+        lookback_days: int = DEFAULT_LOOKBACK_DAYS,
+    ) -> list[PricePoint]:
         r = self._rng(ticker + "_hist")
         opening_price = self._base_price(ticker)
         typical_range = r.uniform(0.010, 0.045)
         avg_volume = r.uniform(50_000, 5_000_000)
 
-        bars = []
+        bars: list[PricePoint] = []
         price = opening_price
         for i in range(lookback_days):
             opening = price
@@ -39,7 +47,7 @@ class MockPPIClient:
             price = close
         return bars
 
-    def current(self, ticker):
+    def current(self, ticker: str) -> PricePoint:
         r = self._rng(ticker + "_current")
         opening = self._base_price(ticker)
         range_frac = r.uniform(0.005, 0.04)
@@ -55,13 +63,13 @@ class MockPPIClient:
             "min": round(low, 2),
         }
 
-    def book(self, ticker):
+    def book(self, ticker: str) -> Book:
         r = self._rng(ticker + "_book")
         mid = self.current(ticker)["price"]
         spread_frac = r.uniform(0.0005, 0.006)
         best_bid = mid * (1 - spread_frac / 2)
         best_offer = mid * (1 + spread_frac / 2)
-        bids = [
+        bids: list[BookLevel] = [
             {
                 "position": i + 1,
                 "price": round(best_bid * (1 - 0.001 * i), 2),
@@ -69,7 +77,7 @@ class MockPPIClient:
             }
             for i in range(5)
         ]
-        offers = [
+        offers: list[BookLevel] = [
             {
                 "position": i + 1,
                 "price": round(best_offer * (1 + 0.001 * i), 2),

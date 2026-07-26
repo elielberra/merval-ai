@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from common.types import Candidate
 from strategies.base import NewsSettings, Strategy, register
 
 from . import config
@@ -7,7 +8,7 @@ from . import config
 DOCS = Path(__file__).resolve().parent / "research"
 
 
-def _normalize(values, invert=False):
+def _normalize(values: list[float], invert: bool = False) -> list[float]:
     lo, hi = min(values), max(values)
     span = hi - lo
     out = []
@@ -21,19 +22,19 @@ def _normalize(values, invert=False):
 class SmallDailyGains(Strategy):
     name = "small-daily-gains"
 
-    def watchlist(self):
+    def watchlist(self) -> list[str]:
         return config.WATCHLIST
 
-    def lookback_days(self):
+    def lookback_days(self) -> int:
         return config.LOOKBACK_DAYS
 
-    def final_count(self):
+    def final_count(self) -> int:
         return config.FINAL_COUNT
 
-    def llm_decision_runs(self):
+    def llm_decision_runs(self) -> int:
         return config.LLM_DECISION_RUNS
 
-    def rank(self, candidates):
+    def rank(self, candidates: list[Candidate]) -> list[Candidate]:
         screened = [
             c
             for c in candidates
@@ -63,7 +64,7 @@ class SmallDailyGains(Strategy):
 
         return sorted(screened, key=lambda c: c["score"], reverse=True)
 
-    def news_settings(self):
+    def news_settings(self) -> NewsSettings:
         return NewsSettings(
             enabled=config.NEWS_ENABLED,
             top_n=config.NEWS_TOP_N,
@@ -74,8 +75,8 @@ class SmallDailyGains(Strategy):
             company_profiles=config.COMPANY_PROFILES,
         )
 
-    def financial_technical_doc(self):
+    def financial_technical_doc(self) -> str:
         return (DOCS / "financial-technical-approach.md").read_text(encoding="utf-8")
 
-    def news_doc(self):
+    def news_doc(self) -> str:
         return (DOCS / "news-approach.md").read_text(encoding="utf-8")

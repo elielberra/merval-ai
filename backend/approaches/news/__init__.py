@@ -1,12 +1,19 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from common.log import get_logger
 
 from . import brief, sources
 from .brief import CompanyNote, NewsBrief, empty_brief
 
+if TYPE_CHECKING:
+    from strategies.base import NewsSettings
+
 log = get_logger("news")
 
 
-def gather(settings, tickers, news_doc=""):
+def gather(settings: NewsSettings, tickers: list[str], news_doc: str = "") -> NewsBrief:
     """Fetch raw news via source adapters, then summarize into a NewsBrief.
 
     Returns a neutral empty brief if news is disabled or nothing is retrievable,

@@ -1,7 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, cast
 from urllib.request import Request, urlopen
 
 from common import llm
 from common.log import get_logger
+from common.types import CompanyProfile, NewsItem
+
+if TYPE_CHECKING:
+    from strategies.base import NewsSettings
 
 log = get_logger("news.sources")
 
@@ -12,10 +19,10 @@ AMBITO_MACRO_RSS = "https://www.ambito.com/rss/pages/economia.xml"
 AMBITO_MARKET_RSS = "https://www.ambito.com/rss/pages/finanzas.xml"
 
 # Basic web-search variant: no dynamic filtering / code execution, so it's fast.
-WEB_SEARCH_TOOL = {"type": "web_search_20250305", "name": "web_search"}
+WEB_SEARCH_TOOL: dict[str, str] = {"type": "web_search_20250305", "name": "web_search"}
 
 
-def fetch_rss(url, source, tier, limit=8):
+def fetch_rss(url: str, source: str, tier: str, limit: int = 8) -> list[NewsItem]:
     """Parse an RSS feed into raw news items. Returns [] on any failure.
 
     The feed is fetched with a hard timeout (feedparser's own fetch has none and
@@ -28,7 +35,7 @@ def fetch_rss(url, source, tier, limit=8):
         with urlopen(req, timeout=RSS_TIMEOUT_SECONDS) as resp:
             raw = resp.read()
         parsed = feedparser.parse(raw)
-        items = []
+        items: list[NewsItem] = []
         for entry in parsed.entries[:limit]:
             items.append(
                 {
@@ -43,7 +50,13 @@ def fetch_rss(url, source, tier, limit=8):
         return []
 
 
-def fetch_web_search(query, tier, source, domains=None, max_uses=1):
+def fetch_web_search(
+    query: str,
+    tier: str,
+    source: str,
+    domains: list[str] | None = None,
+    max_uses: int = 1,
+) -> list[NewsItem]:
     """Fast, shallow web search via Claude. `domains=None` searches the open web.
 
     Kept deliberately lightweight (few search rounds, short output): we only want
@@ -51,13 +64,13 @@ def fetch_web_search(query, tier, source, domains=None, max_uses=1):
     Fetched text is untrusted; graceful ([] on any failure).
     """
     try:
-        tool = dict(WEB_SEARCH_TOOL, max_uses=max_uses)
+        tool: dict[str, Any] = dict(WEB_SEARCH_TOOL, max_uses=max_uses)
         if domains:
             tool["allowed_domains"] = domains
         response = llm.client().messages.create(
             model=llm.NEWS_MODEL,
             max_tokens=1024,
-            tools=[tool],
+            tools=cast(Any, [tool]),
             messages=[
                 {
                     "role": "user",
@@ -71,7 +84,7 @@ def fetch_web_search(query, tier, source, domains=None, max_uses=1):
             ],
         )
         text = "".join(b.text for b in response.content if b.type == "text")
-        items = []
+        items: list[NewsItem] = []
         for line in text.splitlines():
             line = line.strip("-• \t")
             if "::" in line:
@@ -89,7 +102,7 @@ def fetch_web_search(query, tier, source, domains=None, max_uses=1):
         return []
 
 
-def _company_query(profiles, tickers):
+def _company_query(profiles: dict[str, CompanyProfile], tickers: list[str]) -> str:
     names = []
     for t in tickers:
         p = profiles.get(t, {})
@@ -105,13 +118,13 @@ def _company_query(profiles, tickers):
     )
 
 
-def gather_raw(settings, tickers):
+def gather_raw(settings: NewsSettings, tickers: list[str]) -> list[NewsItem]:
     """Collect raw news items with a small, fast set of sources. Every source is
     optional; a source that fails contributes nothing rather than breaking the run.
 
     Macro/market come from free RSS (instant). Two quick web searches add the
     international picture and recent company trading-catalysts."""
-    items = []
+    items: list[NewsItem] = []
 
     log.info("Reading Ámbito RSS feeds (macro + market headlines)...")
     items += fetch_rss(AMBITO_MACRO_RSS, "ambito", "macro")

@@ -1,4 +1,7 @@
-def compute_metrics(history, current, book):
+from common.types import Book, Metrics, PricePoint
+
+
+def compute_metrics(history: list[PricePoint], current: PricePoint, book: Book) -> Metrics:
     ranges = []
     volumes = []
     for bar in history:

@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from common.types import Candidate, CompanyProfile
+
 
 @dataclass
 class NewsSettings:
@@ -9,47 +11,47 @@ class NewsSettings:
     market_domains: list[str] = field(default_factory=list)
     international_domains: list[str] = field(default_factory=list)
     company_official_domains: list[str] = field(default_factory=list)
-    company_profiles: dict = field(default_factory=dict)
+    company_profiles: dict[str, CompanyProfile] = field(default_factory=dict)
 
 
 class Strategy:
     name = "base"
 
-    def watchlist(self):
+    def watchlist(self) -> list[str]:
         raise NotImplementedError
 
-    def lookback_days(self):
+    def lookback_days(self) -> int:
         return 20
 
-    def rank(self, candidates):
+    def rank(self, candidates: list[Candidate]) -> list[Candidate]:
         """Screen + deterministically score candidates; return them ordered best-first."""
         raise NotImplementedError
 
-    def final_count(self):
+    def final_count(self) -> int:
         return 5
 
-    def llm_decision_runs(self):
+    def llm_decision_runs(self) -> int:
         return 5
 
-    def news_settings(self):
+    def news_settings(self) -> NewsSettings:
         return NewsSettings(enabled=False)
 
-    def financial_technical_doc(self):
+    def financial_technical_doc(self) -> str:
         raise NotImplementedError
 
-    def news_doc(self):
+    def news_doc(self) -> str | None:
         return None
 
 
-_REGISTRY = {}
+_REGISTRY: dict[str, type[Strategy]] = {}
 
 
-def register(strategy_cls):
+def register(strategy_cls: type[Strategy]) -> type[Strategy]:
     _REGISTRY[strategy_cls.name] = strategy_cls
     return strategy_cls
 
 
-def get_strategy(name):
+def get_strategy(name: str) -> Strategy:
     if name not in _REGISTRY:
         raise KeyError(
             f"Unknown strategy '{name}'. Available: {sorted(_REGISTRY)}"
@@ -57,5 +59,5 @@ def get_strategy(name):
     return _REGISTRY[name]()
 
 
-def available():
+def available() -> list[str]:
     return sorted(_REGISTRY)

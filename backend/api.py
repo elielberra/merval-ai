@@ -1,6 +1,7 @@
 import threading
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -20,11 +21,11 @@ log = get_logger("research")
 
 app = FastAPI(title="merval-ai research API")
 
-_status = {"running": False, "error": None, "finished_at": None}
+_status: dict[str, Any] = {"running": False, "error": None, "finished_at": None}
 _lock = threading.Lock()
 
 
-def _run_all(strategy_name, llm_runs):
+def _run_all(strategy_name: str, llm_runs: int | None) -> None:
     global _status
     try:
         db.init_db()
@@ -42,18 +43,18 @@ def _run_all(strategy_name, llm_runs):
 
 
 @app.get("/api/dates")
-def get_dates(strategy: str = "small-daily-gains"):
+def get_dates(strategy: str = "small-daily-gains") -> dict[str, list[str]]:
     return {"dates": db.list_dates(strategy)}
 
 
 @app.get("/api/research")
-def get_research(date: str | None = None, strategy: str = "small-daily-gains"):
+def get_research(date: str | None = None, strategy: str = "small-daily-gains") -> dict[str, Any]:
     day = date or datetime.now().date().isoformat()
     return db.research_for_date(strategy, day)
 
 
 @app.post("/api/research/run")
-def run_research(strategy: str = "small-daily-gains", llm_runs: int | None = None):
+def run_research(strategy: str = "small-daily-gains", llm_runs: int | None = None) -> dict[str, Any]:
     global _status
     with _lock:
         if _status["running"]:
@@ -66,5 +67,5 @@ def run_research(strategy: str = "small-daily-gains", llm_runs: int | None = Non
 
 
 @app.get("/api/research/status")
-def research_status():
+def research_status() -> dict[str, Any]:
     return _status

@@ -16,7 +16,7 @@ log = get_logger("research")
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Run Merval research approaches.")
     parser.add_argument(
         "--research", default="all", choices=["all", *names()],

@@ -2,18 +2,21 @@ import json
 import sqlite3
 from datetime import date, datetime
 from pathlib import Path
+from typing import Any
+
+from common.types import AggregatePick, Candidate, LLMPick, NewsBriefLike, NewsCompanyRow
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "merval_research.db"
 
 
-def _connect():
+def _connect() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
-def init_db():
+def init_db() -> None:
     with _connect() as conn:
         conn.executescript(
             """
@@ -101,7 +104,7 @@ def init_db():
 
 # --- Deterministic -----------------------------------------------------------
 
-def save_deterministic_run(strategy, run_dt, picks):
+def save_deterministic_run(strategy: str, run_dt: datetime, picks: list[Candidate]) -> int | None:
     with _connect() as conn:
         cur = conn.execute(
             """
@@ -128,7 +131,9 @@ def save_deterministic_run(strategy, run_dt, picks):
         return run_id
 
 
-def latest_deterministic_run_today(strategy, today=None):
+def latest_deterministic_run_today(
+    strategy: str, today: str | None = None
+) -> tuple[int | None, list[Candidate]]:
     """Return (run_id, picks) for the newest deterministic run dated today, or (None, [])."""
     today = today or date.today().isoformat()
     with _connect() as conn:
@@ -143,7 +148,7 @@ def latest_deterministic_run_today(strategy, today=None):
         if not row:
             return None, []
         run_id = row[0]
-        picks = [
+        picks: list[Candidate] = [
             {
                 "ticker": t,
                 "rank": rank,
@@ -163,7 +168,13 @@ def latest_deterministic_run_today(strategy, today=None):
 
 # --- News --------------------------------------------------------------------
 
-def save_news_run(strategy, run_dt, deterministic_run_id, brief, company_rows):
+def save_news_run(
+    strategy: str,
+    run_dt: datetime,
+    deterministic_run_id: int | None,
+    brief: NewsBriefLike,
+    company_rows: list[NewsCompanyRow],
+) -> int | None:
     with _connect() as conn:
         cur = conn.execute(
             """
@@ -196,7 +207,9 @@ def save_news_run(strategy, run_dt, deterministic_run_id, brief, company_rows):
         return news_run_id
 
 
-def latest_news_run_today(strategy, today=None):
+def latest_news_run_today(
+    strategy: str, today: str | None = None
+) -> tuple[int | None, dict[str, Any] | None, dict[str, dict[str, Any]]]:
     """Return (news_run_id, brief_fields, {ticker: {summary, has_catalyst}}) or (None, None, {})."""
     today = today or date.today().isoformat()
     with _connect() as conn:
@@ -231,7 +244,15 @@ def latest_news_run_today(strategy, today=None):
 
 # --- LLM decision ------------------------------------------------------------
 
-def save_llm_run(strategy, run_dt, deterministic_run_id, news_run_id, run_index, model, picks):
+def save_llm_run(
+    strategy: str,
+    run_dt: datetime,
+    deterministic_run_id: int | None,
+    news_run_id: int | None,
+    run_index: int,
+    model: str,
+    picks: list[LLMPick],
+) -> int | None:
     with _connect() as conn:
         cur = conn.execute(
             """
@@ -264,8 +285,13 @@ def save_llm_run(strategy, run_dt, deterministic_run_id, news_run_id, run_index,
 
 
 def save_llm_decision(
-    strategy, run_dt, deterministic_run_id, news_run_id, num_runs, aggregate
-):
+    strategy: str,
+    run_dt: datetime,
+    deterministic_run_id: int | None,
+    news_run_id: int | None,
+    num_runs: int,
+    aggregate: list[AggregatePick],
+) -> int | None:
     with _connect() as conn:
         cur = conn.execute(
             """
@@ -306,7 +332,7 @@ def save_llm_decision(
 
 # --- Read helpers for the API ------------------------------------------------
 
-def list_dates(strategy):
+def list_dates(strategy: str) -> list[str]:
     """Dates (newest first) that have at least one deterministic run."""
     with _connect() as conn:
         return [
@@ -321,7 +347,7 @@ def list_dates(strategy):
         ]
 
 
-def research_for_date(strategy, day):
+def research_for_date(strategy: str, day: str) -> dict[str, Any]:
     """Assemble the latest deterministic/news/decision runs for a given date into
     a single dict for the frontend. `has_data` is False when there's no run."""
     det_run_id, picks = latest_deterministic_run_today(strategy, day)
@@ -333,7 +359,7 @@ def research_for_date(strategy, day):
             "SELECT analysis_datetime FROM deterministic_runs WHERE id = ?", (det_run_id,)
         ).fetchone()[0]
 
-        result = {
+        result: dict[str, Any] = {
             "date": day,
             "has_data": True,
             "deterministic": {"run_datetime": det_dt, "picks": picks},

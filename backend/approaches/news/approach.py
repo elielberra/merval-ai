@@ -1,8 +1,18 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
+
 from approaches.base import ResearchApproach, register
 from common import db
 from common.log import get_logger
+from common.types import NewsCompanyRow
 
 from . import gather
+from .brief import CompanyNote, NewsBrief
+
+if TYPE_CHECKING:
+    from strategies.base import Strategy
 
 log = get_logger("news")
 
@@ -15,7 +25,7 @@ class NewsApproach(ResearchApproach):
     name = "news"
     order = 2
 
-    def run(self, strategy, run_dt, **opts):
+    def run(self, strategy: Strategy, run_dt: datetime, **opts: Any) -> dict[str, Any]:
         det_run_id, picks = db.latest_deterministic_run_today(strategy.name)
         tickers = [p["ticker"] for p in picks]
         if det_run_id is None:
@@ -27,7 +37,7 @@ class NewsApproach(ResearchApproach):
         brief = gather(settings, tickers, news_doc=strategy.news_doc() or "")
 
         notes = brief.company_notes_by_ticker()
-        company_rows = []
+        company_rows: list[NewsCompanyRow] = []
         for t in tickers:
             note = notes.get(t)
             company_rows.append(
@@ -53,7 +63,9 @@ class NewsApproach(ResearchApproach):
         return {"news_run_id": news_run_id, "brief": brief, "tickers": tickers}
 
 
-def _log_summary(brief, tickers, notes):
+def _log_summary(
+    brief: NewsBrief, tickers: list[str], notes: dict[str, CompanyNote]
+) -> None:
     lines = ["News analysis summary:"]
     lines.append(f"  Macro:  {brief.macro_summary or '(no data)'}")
     lines.append(f"  Market: {brief.market_summary or '(no data)'}")

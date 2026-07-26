@@ -1,10 +1,18 @@
-from concurrent.futures import ThreadPoolExecutor
+from __future__ import annotations
+
+from concurrent.futures import Future, ThreadPoolExecutor
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
 from approaches.base import ResearchApproach, register
 from common import db, llm
 from common.log import get_logger
+from common.types import AggregatePick, Candidate, LLMPick
+
+if TYPE_CHECKING:
+    from strategies.base import Strategy
 
 log = get_logger("decision")
 
@@ -24,7 +32,13 @@ class DecisionApproach(ResearchApproach):
     name = "decision"
     order = 3
 
-    def run(self, strategy, run_dt, llm_runs=None, **opts):
+    def run(
+        self,
+        strategy: Strategy,
+        run_dt: datetime,
+        llm_runs: int | None = None,
+        **opts: Any,
+    ) -> dict[str, Any]:
         n = llm_runs or strategy.llm_decision_runs()
 
         det_run_id, picks = db.latest_deterministic_run_today(strategy.name)
@@ -39,7 +53,8 @@ class DecisionApproach(ResearchApproach):
         if news_run_id is None:
             log.info("No news run today — deciding on deterministic data only.")
 
-        candidates, excluded = [], []
+        candidates: list[Candidate] = []
+        excluded: list[str] = []
         for p in picks:
             if companies.get(p["ticker"], {}).get("has_catalyst"):
                 excluded.append(p["ticker"])
@@ -57,9 +72,11 @@ class DecisionApproach(ResearchApproach):
         log.info("Running %d concurrent LLM decision call(s) with %s...", n, model)
 
         with ThreadPoolExecutor(max_workers=n) as executor:
-            futures = [executor.submit(_one_call, system, user, model) for _ in range(n)]
+            futures: list[Future[list[LLMPick]]] = [
+                executor.submit(_one_call, system, user, model) for _ in range(n)
+            ]
 
-        all_runs = []
+        all_runs: list[list[LLMPick]] = []
         for i, future in enumerate(futures, start=1):
             run_picks = future.result()
             if not run_picks:
@@ -87,7 +104,11 @@ class DecisionApproach(ResearchApproach):
         return {"decision_id": decision_id, "aggregate": aggregate}
 
 
-def _prompt(strategy, candidates, companies):
+def _prompt(
+    strategy: Strategy,
+    candidates: list[Candidate],
+    companies: dict[str, dict[str, Any]],
+) -> tuple[str, str]:
     lines = []
     for c in candidates:
         m = c["metrics"]
@@ -117,7 +138,7 @@ def _prompt(strategy, candidates, companies):
     return system, user
 
 
-def _one_call(system, user, model):
+def _one_call(system: str, user: str, model: str) -> list[LLMPick]:
     try:
         response = llm.client().messages.parse(
             model=model,
@@ -139,10 +160,14 @@ def _one_call(system, user, model):
         return []
 
 
-def _aggregate(candidates, all_runs):
+def _aggregate(
+    candidates: list[Candidate], all_runs: list[list[LLMPick]]
+) -> list[AggregatePick]:
     tickers = [c["ticker"] for c in candidates]
     worst = len(tickers) + 1
-    stats = {t: {"ranks": [], "times_first": 0, "best_rank": worst, "why": None} for t in tickers}
+    stats: dict[str, dict[str, Any]] = {
+        t: {"ranks": [], "times_first": 0, "best_rank": worst, "why": None} for t in tickers
+    }
 
     for run in all_runs:
         by_ticker = {p["ticker"]: p for p in run}
@@ -156,7 +181,7 @@ def _aggregate(candidates, all_runs):
                 stats[t]["best_rank"] = rank
                 stats[t]["why"] = p.get("reason")
 
-    agg = []
+    agg: list[AggregatePick] = []
     for t in tickers:
         ranks = stats[t]["ranks"]
         avg = round(sum(ranks) / len(ranks), 2) if ranks else worst
@@ -174,7 +199,7 @@ def _aggregate(candidates, all_runs):
     return agg
 
 
-def _log_decision(aggregate, n):
+def _log_decision(aggregate: list[AggregatePick], n: int) -> None:
     lines = [f"LLM decision — averaged over {n} run(s), best first:"]
     for a in aggregate:
         lines.append(

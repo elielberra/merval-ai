@@ -8,7 +8,7 @@ LOG_FILE = LOG_DIR / "research.log"
 _configured = False
 
 
-def setup_logging(level=logging.INFO):
+def setup_logging(level: int = logging.INFO) -> Path:
     global _configured
     if _configured:
         return LOG_FILE
@@ -30,5 +30,5 @@ def setup_logging(level=logging.INFO):
     return LOG_FILE
 
 
-def get_logger(name):
+def get_logger(name: str) -> logging.Logger:
     return logging.getLogger("merval." + name)

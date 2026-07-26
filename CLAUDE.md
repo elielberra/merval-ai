@@ -56,6 +56,8 @@ python run_research.py --research deterministic  # or just one: deterministic | 
 python run_research.py --research decision --llm-runs 5   # override the ensemble size
 ```
 
+**Typing:** all backend Python code is fully type-annotated (function signatures, module-level constants) and must stay that way — add type hints to any new or edited code. Dict-shaped payloads that cross module boundaries (e.g. a deterministic candidate, an LLM pick) use the `TypedDict`/`Protocol` definitions in `common/types.py` rather than bare `dict`; add new shapes there as needed. Validate with `mypy .` (run from `backend/`, inside the venv; config in `backend/mypy.ini`) — it must report no issues before committing.
+
 `ANTHROPIC_API_KEY` is loaded from `backend/.env` (via `python-dotenv`); `.env.example` is the committed template, `.env` is gitignored — never commit the real key. `--strategy small-daily-gains` is the default. Every run writes a timestamped log (with per-approach analysis summaries) to `backend/logs/research.log`.
 
 ### Three layers: `common/` (infra) · `approaches/` (research approaches) · `strategies/` (per-strategy)

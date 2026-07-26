@@ -1,10 +1,17 @@
-from datetime import timedelta
+from __future__ import annotations
+
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Any
 
 from approaches.base import ResearchApproach, register
 from common import db
 from common.log import get_logger
 from common.metrics import compute_metrics
 from common.ppi_client import MockPPIClient
+from common.types import Candidate, PPIClient
+
+if TYPE_CHECKING:
+    from strategies.base import Strategy
 
 log = get_logger("deterministic")
 
@@ -14,12 +21,18 @@ class DeterministicApproach(ResearchApproach):
     name = "deterministic"
     order = 1
 
-    def run(self, strategy, run_dt, client=None, **opts):
+    def run(
+        self,
+        strategy: Strategy,
+        run_dt: datetime,
+        client: PPIClient | None = None,
+        **opts: Any,
+    ) -> dict[str, Any]:
         client = client or MockPPIClient()
         date_from = run_dt - timedelta(days=30)
 
         log.info("Deterministic screen over %d tickers...", len(strategy.watchlist()))
-        candidates = []
+        candidates: list[Candidate] = []
         for ticker in strategy.watchlist():
             history = client.search(
                 ticker, date_from, run_dt, lookback_days=strategy.lookback_days()
