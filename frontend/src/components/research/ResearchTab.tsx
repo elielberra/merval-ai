@@ -51,12 +51,8 @@ export function ResearchTab() {
           setRunError(s.error);
           return;
         }
-        const today = todayISO();
-        if (date === today) {
-          await load(today);
-        } else {
-          setDate(today);
-        }
+        setDate(todayISO());
+        await load(todayISO());
       }
     }, 3000);
   };
