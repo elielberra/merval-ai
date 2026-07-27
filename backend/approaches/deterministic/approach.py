@@ -7,7 +7,6 @@ from approaches.base import ResearchApproach, register
 from common import db
 from common.log import get_logger
 from common.metrics import compute_metrics
-from common.ppi_client import MockPPIClient
 from common.types import Candidate, PPIClient
 
 if TYPE_CHECKING:
@@ -28,10 +27,14 @@ class DeterministicApproach(ResearchApproach):
         client: PPIClient | None = None,
         **opts: Any,
     ) -> dict[str, Any]:
-        client = client or MockPPIClient()
+        client = client or strategy.market_client()
         date_from = run_dt - timedelta(days=30)
 
-        log.info("Deterministic screen over %d tickers...", len(strategy.watchlist()))
+        log.info(
+            "Deterministic screen over %d tickers using %s...",
+            len(strategy.watchlist()),
+            type(client).__name__,
+        )
         candidates: list[Candidate] = []
         for ticker in strategy.watchlist():
             history = client.search(

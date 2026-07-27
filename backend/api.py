@@ -18,6 +18,10 @@ setup_logging()
 db.init_db()
 
 log = get_logger("research")
+log.info(
+    "API started. Market data source: %s",
+    get_strategy("small-daily-gains").market_source(),
+)
 
 app = FastAPI(title="merval-ai research API")
 

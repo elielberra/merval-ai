@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
-from common.types import Candidate, CompanyProfile
+from common.ppi_client import MockPPIClient, describe_source
+from common.types import Candidate, CompanyProfile, PPIClient
 
 
 @dataclass
@@ -19,6 +20,14 @@ class Strategy:
 
     def watchlist(self) -> list[str]:
         raise NotImplementedError
+
+    def market_client(self) -> PPIClient:
+        """The market data source the deterministic stage reads from."""
+        return MockPPIClient()
+
+    def market_source(self) -> str:
+        """Short description of that data source, for startup logging."""
+        return describe_source("mock", True)
 
     def lookback_days(self) -> int:
         return 20

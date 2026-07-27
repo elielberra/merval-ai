@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-`frontend/` (React + TypeScript via Vite) renders a dashboard from hardcoded dummy data. `backend/` (Python) has the analysis phase of the trading agent: it scans a watchlist, ranks the top 3 stocks for a "small, consistent daily gains" strategy, and stores the results in SQLite. Neither talks to the real PPI API yet — the user's PPI account isn't activated, so both use mock data shaped like the real API responses.
+`frontend/` (React + TypeScript via Vite) renders a dashboard from hardcoded dummy data. `backend/` (Python) has the analysis phase of the trading agent: it scans a watchlist, ranks the top 3 stocks for a "small, consistent daily gains" strategy, and stores the results in SQLite. Neither talks to the real PPI API yet — the user's PPI account isn't activated, so both use mock data shaped like the real API responses. The backend's real-PPI path *is* written and only needs credentials plus a config flag to switch on (see the design invariants below).
 
 ## Purpose
 
@@ -58,7 +58,7 @@ python run_research.py --research decision --llm-runs 5   # override the ensembl
 
 **Typing:** all backend Python code is fully type-annotated (function signatures, module-level constants) and must stay that way — add type hints to any new or edited code. Dict-shaped payloads that cross module boundaries (e.g. a deterministic candidate, an LLM pick) use the `TypedDict`/`Protocol` definitions in `common/types.py` rather than bare `dict`; add new shapes there as needed. Validate with `mypy .` (run from `backend/`, inside the venv; config in `backend/mypy.ini`) — it must report no issues before committing.
 
-`ANTHROPIC_API_KEY` is loaded from `backend/.env` (via `python-dotenv`); `.env.example` is the committed template, `.env` is gitignored — never commit the real key. `--strategy small-daily-gains` is the default. Every run writes a timestamped log (with per-approach analysis summaries) to `backend/logs/research.log`.
+`ANTHROPIC_API_KEY` is loaded from `backend/.env` (via `python-dotenv`); `.env.example` is the committed template, `.env` is gitignored — never commit the real key. `PPI_API_KEY`/`PPI_API_SECRET` live there too, needed only when `DATA_SOURCE = "ppi"` (see the design invariants below); `scripts/check_ppi.py <TICKER>` smoke-tests the real API. `--strategy small-daily-gains` is the default. Every run writes a timestamped log (with per-approach analysis summaries) to `backend/logs/research.log`.
 
 ### Three layers: `common/` (infra) · `approaches/` (research approaches) · `strategies/` (per-strategy)
 
@@ -88,7 +88,7 @@ backend/
 - **Deterministic rank; Claude judges at the decision stage; news only vetoes/warns.** The deterministic order is reproducible; the decision ensemble surfaces the LLM's judgment *and* its consistency across runs; news can exclude a catalyst stock or flag a risk-off day but never reorders.
 - **Models:** news = `claude-sonnet-5`; decision = `claude-sonnet-5` (`DECISION_MODEL` in `common/llm.py`) — it's an N-call ensemble, so Sonnet by default; switch to Opus for max quality on the money decision.
 - Scores are **heuristic suitability (0–100), not calibrated probabilities.** `~0.85%` round-trip cost is an estimate — re-verify against the real PPI tier.
-- **Swapping in the real PPI API:** write a class with the same `.current`/`.search`/`.book` interface as `MockPPIClient` and pass it to the deterministic approach's `run(strategy, run_dt, client=...)`.
+- **Switching to the real PPI API:** set `DATA_SOURCE = "ppi"` in `strategies/small_daily_gains/config.py` (from `"mock"`) and put `PPI_API_KEY`/`PPI_API_SECRET` in `backend/.env`. `PPI_SANDBOX` picks Sandbox vs production. `common/ppi_client.py` holds both clients — `MockPPIClient` and `PPIApiClient` (the official `ppi-client` package) — plus the `make_client()` picker; `Strategy.market_client()` is what the deterministic approach calls. Passing `run(strategy, run_dt, client=...)` explicitly still overrides everything.
 - **Resetting the DB:** `backend/scripts/reset_db.sh` deletes all rows from every table (schema left intact, `VACUUM`ed after). Prompts for confirmation unless run with `-y`/`--force`.
 - **DB** (`data/merval_research.db`, gitignored) stores each stage separately with a full `analysis_datetime`: `deterministic_runs`/`deterministic_picks`, `news_runs`/`news_company`, `llm_runs`/`llm_run_picks` (individual calls) + `llm_decisions`/`llm_decision_picks` (aggregate). News & decision feed from the **latest deterministic run of the current day**.
 
@@ -99,3 +99,9 @@ backend/
 Use Conventional Commits for all commit messages in this repo (e.g. `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`).
 
 Keep commit messages short, concrete, and easy to understand — a single plain-language line describing what changed, no multi-paragraph bodies unless truly necessary. Do not add a Claude/AI co-author line.
+
+## Pull requests
+
+Ship changes as PRs, not commits straight to `main`: branch, commit, push, open a PR.
+
+PR descriptions are for a reader who wants to know **what changed and why**, not how it was built. Say what the change does, why it was needed, and anything the reader must act on (new env vars, config to flip, follow-ups). Skip file-by-file walkthroughs, function names, and line counts — the diff already covers those. A few short sections or bullets is the right length.

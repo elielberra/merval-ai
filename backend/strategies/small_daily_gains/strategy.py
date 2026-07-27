@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from common.types import Candidate
+from common.ppi_client import describe_source, make_client
+from common.types import Candidate, PPIClient
 from strategies.base import NewsSettings, Strategy, register
 
 from . import config
@@ -24,6 +25,17 @@ class SmallDailyGains(Strategy):
 
     def watchlist(self) -> list[str]:
         return config.WATCHLIST
+
+    def market_client(self) -> PPIClient:
+        return make_client(
+            config.DATA_SOURCE,
+            config.INSTRUMENT_TYPE,
+            config.SETTLEMENT,
+            config.PPI_SANDBOX,
+        )
+
+    def market_source(self) -> str:
+        return describe_source(config.DATA_SOURCE, config.PPI_SANDBOX)
 
     def lookback_days(self) -> int:
         return config.LOOKBACK_DAYS

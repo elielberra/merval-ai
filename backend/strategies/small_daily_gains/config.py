@@ -20,10 +20,16 @@ WATCHLIST: list[str] = [
 ]
 
 INSTRUMENT_TYPE: str = "ACCIONES"
-MARKET: str = "BYMA"
 SETTLEMENT: str = "A-24HS"
 
 LOOKBACK_DAYS: int = 20
+
+# Market data source: "mock" (synthetic, no credentials) or "ppi" (the real API).
+# To go live: put PPI_API_KEY / PPI_API_SECRET in backend/.env and set this to "ppi".
+DATA_SOURCE: str = "mock"
+
+# Only used when DATA_SOURCE == "ppi". True = PPI's Sandbox, False = production.
+PPI_SANDBOX: bool = True
 
 # --- Deterministic selection parameters --------------------------------------
 # The numbers the deterministic stage screens and scores with. The reasoning is
@@ -50,11 +56,14 @@ VOLUME_WEIGHT: float = 0.25
 SPREAD_WEIGHT: float = 0.20
 MOMENTUM_WEIGHT: float = 0.20
 
+# How many of the scored candidates the deterministic stage keeps and stores.
+# The watchlist is screened and ranked, then truncated to this many picks — which
+# is also what the news and decision stages downstream receive.
 FINAL_COUNT: int = 5
 
 # Number of independent LLM calls the decision stage makes, then averages, to
 # check answer consistency. Overridable at the CLI with --llm-runs.
-LLM_DECISION_RUNS: int = 5
+LLM_DECISION_RUNS: int = 3
 
 # --- News settings -----------------------------------------------------------
 # Trusted sources per tier (see research/news-approach.md). Company news is
@@ -67,7 +76,7 @@ NEWS_MACRO_DOMAINS: list[str] = ["ambito.com", "infobae.com", "indec.gob.ar", "b
 NEWS_MARKET_DOMAINS: list[str] = ["cronista.com", "ambito.com"]
 
 # International tier: global events that tend to move the Merval (US Fed / rates,
-# wars/geopolitics, global financial stress). Scoped to reputable global press.
+# wars/geopolitics, global financial stress). Scoped to r waeputable global press.
 NEWS_INTERNATIONAL_DOMAINS: list[str] = [
     "reuters.com",
     "bloomberg.com",

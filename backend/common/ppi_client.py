@@ -1,7 +1,8 @@
+import os
 import random
 from datetime import datetime, timedelta
 
-from common.types import Book, BookLevel, PricePoint
+from common.types import Book, BookLevel, PPIClient, PricePoint
 
 DEFAULT_LOOKBACK_DAYS = 20
 
@@ -86,3 +87,63 @@ class MockPPIClient:
             for i in range(5)
         ]
         return {"date": datetime.now().isoformat(), "bids": bids, "offers": offers}
+
+
+class PPIApiClient:
+    """The real PPI API, via the official `ppi-client` package.
+
+    PPI's MarketData responses already have the shapes this codebase expects
+    (`PricePoint`, `Book`), so they are returned as-is.
+    """
+
+    def __init__(self, instrument_type: str, settlement: str, sandbox: bool) -> None:
+        from ppi_client.ppi import PPI  # the installed package, not this module
+
+        key, secret = os.getenv("PPI_API_KEY"), os.getenv("PPI_API_SECRET")
+        if not key or not secret:
+            raise RuntimeError(
+                "Missing PPI credentials: set PPI_API_KEY and PPI_API_SECRET in "
+                "backend/.env (see .env.example), or set DATA_SOURCE = 'mock' in "
+                "strategies/small_daily_gains/config.py to use mock data."
+            )
+
+        self._type = instrument_type
+        self._settlement = settlement
+        self._ppi = PPI(sandbox=sandbox)
+        self._ppi.account.login_api(key, secret)
+
+    def search(
+        self,
+        ticker: str,
+        date_from: datetime,
+        date_to: datetime,
+        lookback_days: int = DEFAULT_LOOKBACK_DAYS,
+    ) -> list[PricePoint]:
+        bars: list[PricePoint] = self._ppi.marketdata.search(
+            ticker, self._type, self._settlement, date_from, date_to
+        )
+        return bars[-lookback_days:]
+
+    def current(self, ticker: str) -> PricePoint:
+        point: PricePoint = self._ppi.marketdata.current(
+            ticker, self._type, self._settlement
+        )
+        return point
+
+    def book(self, ticker: str) -> Book:
+        book: Book = self._ppi.marketdata.book(ticker, self._type, self._settlement)
+        return book
+
+
+def make_client(
+    source: str, instrument_type: str, settlement: str, sandbox: bool
+) -> PPIClient:
+    if source == "ppi":
+        return PPIApiClient(instrument_type, settlement, sandbox)
+    return MockPPIClient()
+
+
+def describe_source(source: str, sandbox: bool) -> str:
+    if source == "ppi":
+        return f"real PPI API ({'SANDBOX' if sandbox else 'PRODUCTION'})"
+    return "MOCK data (synthetic — not real market data)"
