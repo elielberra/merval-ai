@@ -35,9 +35,11 @@ def main() -> None:
     strategy = get_strategy(args.strategy)
 
     to_run = ordered() if args.research == "all" else [get_approach(args.research)]
+    log.info("Market data source: %s", strategy.market_source())
     print(
         f"Running {[a.name for a in to_run]} for '{strategy.name}' "
         f"at {run_dt.isoformat(timespec='seconds')}\n"
+        f"Market data source: {strategy.market_source()}\n"
     )
 
     try:
