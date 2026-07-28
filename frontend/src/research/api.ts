@@ -55,6 +55,7 @@ export interface DecisionData {
 export interface Research {
   date: string;
   has_data: boolean;
+  is_complete: boolean;
   deterministic?: { run_datetime: string; picks: DeterministicPick[] };
   news?: NewsData | null;
   decision?: DecisionData | null;

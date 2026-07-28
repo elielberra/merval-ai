@@ -349,10 +349,11 @@ def list_dates(strategy: str) -> list[str]:
 
 def research_for_date(strategy: str, day: str) -> dict[str, Any]:
     """Assemble the latest deterministic/news/decision runs for a given date into
-    a single dict for the frontend. `has_data` is False when there's no run."""
+    a single dict for the frontend. `has_data` is False when there's no run;
+    `is_complete` is False when only some of the three stages ran that day."""
     det_run_id, picks = latest_deterministic_run_today(strategy, day)
     if det_run_id is None:
-        return {"date": day, "has_data": False}
+        return {"date": day, "has_data": False, "is_complete": False}
 
     with _connect() as conn:
         det_dt = conn.execute(
@@ -429,4 +430,5 @@ def research_for_date(strategy: str, day: str) -> dict[str, Any]:
                 "runs": runs,
             }
 
+        result["is_complete"] = result["news"] is not None and result["decision"] is not None
         return result

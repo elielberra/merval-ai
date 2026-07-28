@@ -506,6 +506,21 @@ body {
   color: var(--text-secondary);
 }
 
+.partial-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
 .btn-primary {
   background: var(--accent);
   color: #fff;

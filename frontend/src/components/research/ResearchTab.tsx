@@ -11,6 +11,13 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function missingStages(data: Research) {
+  const missing: string[] = [];
+  if (!data.news) missing.push("news");
+  if (!data.decision) missing.push("decision");
+  return missing;
+}
+
 export function ResearchTab() {
   const [date, setDate] = useState(todayISO());
   const [data, setData] = useState<Research | null>(null);
@@ -59,6 +66,7 @@ export function ResearchTab() {
 
   const isToday = date === todayISO();
   const hasData = data?.has_data;
+  const partial = hasData && !data!.is_complete;
 
   return (
     <div className="research">
@@ -87,6 +95,20 @@ export function ResearchTab() {
         <Spinner label="Loading…" />
       ) : hasData ? (
         <>
+          {partial && (
+            <div className="partial-banner">
+              <span>
+                Incomplete analysis for {date} — the{" "}
+                {missingStages(data!).join(" and ")} stage
+                {missingStages(data!).length > 1 ? "s" : ""} didn't run.
+              </span>
+              {isToday && (
+                <button className="btn-primary" onClick={onRun}>
+                  Run analysis
+                </button>
+              )}
+            </div>
+          )}
           {data!.news && <MarketRiskGauge score={data!.news.market_risk_score} />}
           {data!.decision && data!.deterministic && (
             <TopPicks
