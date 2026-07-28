@@ -432,3 +432,58 @@ def research_for_date(strategy: str, day: str) -> dict[str, Any]:
 
         result["is_complete"] = result["news"] is not None and result["decision"] is not None
         return result
+
+
+# --- Deletion ------------------------------------------------------------
+
+_DATE_RANGE_DELETIONS: list[tuple[str, str]] = [
+    (
+        "llm_decision_picks",
+        "DELETE FROM llm_decision_picks WHERE llm_decision_id IN "
+        "(SELECT id FROM llm_decisions WHERE analysis_date BETWEEN ? AND ?)",
+    ),
+    (
+        "llm_run_picks",
+        "DELETE FROM llm_run_picks WHERE llm_run_id IN "
+        "(SELECT id FROM llm_runs WHERE analysis_date BETWEEN ? AND ?)",
+    ),
+    ("llm_decisions", "DELETE FROM llm_decisions WHERE analysis_date BETWEEN ? AND ?"),
+    ("llm_runs", "DELETE FROM llm_runs WHERE analysis_date BETWEEN ? AND ?"),
+    (
+        "news_company",
+        "DELETE FROM news_company WHERE news_run_id IN "
+        "(SELECT id FROM news_runs WHERE analysis_date BETWEEN ? AND ?)",
+    ),
+    ("news_runs", "DELETE FROM news_runs WHERE analysis_date BETWEEN ? AND ?"),
+    (
+        "deterministic_picks",
+        "DELETE FROM deterministic_picks WHERE run_id IN "
+        "(SELECT id FROM deterministic_runs WHERE analysis_date BETWEEN ? AND ?)",
+    ),
+    ("deterministic_runs", "DELETE FROM deterministic_runs WHERE analysis_date BETWEEN ? AND ?"),
+]
+
+_ALL_TABLES_DELETE_ORDER: list[str] = [table for table, _ in _DATE_RANGE_DELETIONS]
+
+
+def delete_date_range(start_date: str, end_date: str) -> dict[str, int]:
+    """Delete all research data with analysis_date in [start_date, end_date]
+    (inclusive, both "YYYY-MM-DD"). Returns rows deleted per table."""
+    with _connect() as conn:
+        return {
+            table: conn.execute(sql, (start_date, end_date)).rowcount
+            for table, sql in _DATE_RANGE_DELETIONS
+        }
+
+
+def purge_all() -> dict[str, int]:
+    """Delete every row from every research table and reclaim disk space.
+    Returns rows deleted per table."""
+    with _connect() as conn:
+        counts = {
+            table: conn.execute(f"DELETE FROM {table}").rowcount
+            for table in _ALL_TABLES_DELETE_ORDER
+        }
+    with _connect() as conn:
+        conn.execute("VACUUM")
+    return counts
