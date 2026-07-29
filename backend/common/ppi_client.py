@@ -99,12 +99,13 @@ class PPIApiClient:
     def __init__(self, instrument_type: str, settlement: str, sandbox: bool) -> None:
         from ppi_client.ppi import PPI  # the installed package, not this module
 
-        key = os.getenv("PPI_PUBLIC_API_KEY")
-        secret = os.getenv("PPI_PRIVATE_API_KEY")
+        env_prefix = "PPI_SANDBOX" if sandbox else "PPI_PROD"
+        key = os.getenv(f"{env_prefix}_PUBLIC_API_KEY")
+        secret = os.getenv(f"{env_prefix}_PRIVATE_API_KEY")
         if not key or not secret:
             raise RuntimeError(
-                "Missing PPI credentials: set PPI_PUBLIC_API_KEY and "
-                "PPI_PRIVATE_API_KEY in backend/.env (see .env.example), "
+                f"Missing PPI credentials: set {env_prefix}_PUBLIC_API_KEY and "
+                f"{env_prefix}_PRIVATE_API_KEY in backend/.env (see .env.example), "
                 "or set DATA_SOURCE = 'mock' in "
                 "strategies/small_daily_gains/config.py to use mock data."
             )

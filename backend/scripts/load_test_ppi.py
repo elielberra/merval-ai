@@ -137,12 +137,13 @@ def main() -> None:
     args = parser.parse_args()
 
     load_dotenv(Path(__file__).resolve().parents[1] / ".env")
-    api_key = os.getenv("PPI_PUBLIC_API_KEY")
-    api_secret = os.getenv("PPI_PRIVATE_API_KEY")
+    env_prefix = "PPI_SANDBOX" if args.sandbox else "PPI_PROD"
+    api_key = os.getenv(f"{env_prefix}_PUBLIC_API_KEY")
+    api_secret = os.getenv(f"{env_prefix}_PRIVATE_API_KEY")
     if not api_key or not api_secret:
         raise SystemExit(
-            "Missing PPI credentials: set PPI_PUBLIC_API_KEY and PPI_PRIVATE_API_KEY "
-            "in backend/.env."
+            f"Missing PPI credentials: set {env_prefix}_PUBLIC_API_KEY and "
+            f"{env_prefix}_PRIVATE_API_KEY in backend/.env."
         )
 
     base_url = SANDBOX_BASE_URL if args.sandbox else PROD_BASE_URL

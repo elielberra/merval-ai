@@ -23,8 +23,10 @@ def main() -> None:
     load_dotenv(Path(__file__).resolve().parents[1] / ".env")
     ticker = sys.argv[1] if len(sys.argv) > 1 else "GGAL"
 
-    client = PPIApiClient(config.INSTRUMENT_TYPE, config.SETTLEMENT, config.PPI_SANDBOX)
-    print(f"Logged in (sandbox={config.PPI_SANDBOX}). Querying {ticker}...\n")
+    client = PPIApiClient(
+        config.INSTRUMENT_TYPE, config.SETTLEMENT, not config.IS_PPI_PROD
+    )
+    print(f"Logged in (sandbox={not config.IS_PPI_PROD}). Querying {ticker}...\n")
 
     run_dt = datetime.now()
     history = client.search(

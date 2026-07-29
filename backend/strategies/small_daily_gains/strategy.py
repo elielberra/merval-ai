@@ -31,11 +31,11 @@ class SmallDailyGains(Strategy):
             config.DATA_SOURCE,
             config.INSTRUMENT_TYPE,
             config.SETTLEMENT,
-            config.PPI_SANDBOX,
+            not config.IS_PPI_PROD,
         )
 
     def market_source(self) -> str:
-        return describe_source(config.DATA_SOURCE, config.PPI_SANDBOX)
+        return describe_source(config.DATA_SOURCE, not config.IS_PPI_PROD)
 
     def lookback_days(self) -> int:
         return config.LOOKBACK_DAYS
