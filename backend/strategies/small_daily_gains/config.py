@@ -25,14 +25,13 @@ SETTLEMENT: str = "A-24HS"
 LOOKBACK_DAYS: int = 20
 
 # Market data source: "mock" (synthetic, no credentials) or "ppi" (the real API).
-# To go live: put PPI_PUBLIC_API_KEY / PPI_PRIVATE_API_KEY in backend/.env and
-# set this to "ppi".
+# To go live: put PPI_SANDBOX_*/PPI_PROD_* keys in backend/.env and set this to "ppi".
 DATA_SOURCE: str = "ppi"
 
-# Only used when DATA_SOURCE == "ppi". True = PPI's Sandbox, False = production.
-# The keys issued under Gestiones -> Gestión de servicio API are production ones;
-# Sandbox credentials are a separate pair that PPI sends by email.
-PPI_SANDBOX: bool = False
+# Only used when DATA_SOURCE == "ppi". True = production, False = PPI's Sandbox.
+# Sandbox and Production are separate key pairs (see .env.example) — this flag
+# picks which one gets read, so both can sit in .env at once.
+IS_PPI_PROD: bool = True
 
 # --- Deterministic selection parameters --------------------------------------
 # The numbers the deterministic stage screens and scores with. The reasoning is
